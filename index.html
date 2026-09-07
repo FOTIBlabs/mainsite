@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FOTIB Labs</title>
+<meta name="description" content="Flow · Observe · Tune · Iterate · Balance — 자연스러운 성장의 순환을 관찰하고 기록하는 퍼스널 랩 FOTIB.">
+<meta name="theme-color" content="#0A0D12">
+<link rel="canonical" href="https://fotiblabs.com/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FOTIB Labs">
+<meta property="og:title" content="FOTIB Labs">
+<meta property="og:description" content="Flow · Observe · Tune · Iterate · Balance — 자연스러운 성장의 순환을 관찰하고 기록하는 퍼스널 랩.">
+<meta property="og:url" content="https://fotiblabs.com/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FOTIB Labs">
+<meta name="twitter:description" content="Flow · Observe · Tune · Iterate · Balance — 자연스러운 성장의 순환을 관찰하고 기록하는 퍼스널 랩.">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0A0D12;
+    --bg-raised:#12161E;
+    --bg-inset:#060809;
+    --line:#232935;
+    --line-soft:#171C25;
+    --text:#ECE9E2;
+    --text-dim:#939AA8;
+    --text-faint:#565D6B;
+    --accent:#E8A659;
+    --accent-dim:#B9834A;
+    --accent-wash:rgba(232,166,89,0.12);
+    --flow:#5AA9E6;
+    --observe:#9B7EDE;
+    --tune:#E8A659;
+    --iterate:#E8735A;
+    --balance:#5FBF95;
+    --font-display:'Big Shoulders Display',system-ui,sans-serif;
+    --font-body:'Manrope',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    --wrap:1180px;
+    color-scheme:dark;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    line-height:0.96;
+    text-wrap:balance;
+    margin:0;
+    letter-spacing:0.01em;
+    font-weight:800;
+  }
+
+  p{ margin:0; }
+  a{ color:inherit; }
+  ul,ol{ margin:0; padding:0; list-style:none; }
+  figure{ margin:0; }
+  svg{ display:block; overflow:visible; }
+
+  .wrap{
+    max-width:var(--wrap);
+    margin:0 auto;
+    padding-inline:clamp(1.25rem,4vw,3rem);
+  }
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:0.75rem;
+    font-weight:500;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:sticky;
+    top:0;
+    z-index:40;
+    background:rgba(10,13,18,0.82);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav-inner{
+    max-width:var(--wrap);
+    margin:0 auto;
+    padding:0.85rem clamp(1.25rem,4vw,3rem);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+  }
+  .nav-brand{
+    display:flex;
+    align-items:center;
+    gap:0.7rem;
+    text-decoration:none;
+  }
+  .nav-brand .wordmark-small{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:1.15rem;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .phase-dots{
+    display:flex;
+    align-items:center;
+    gap:0.3rem;
+  }
+  .phase-dots span{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--dot-color);
+    display:inline-block;
+  }
+  .nav-links{
+    display:flex;
+    gap:clamp(1rem,3vw,2rem);
+    font-family:var(--font-mono);
+    font-size:0.8rem;
+    letter-spacing:0.04em;
+  }
+  .nav-links a{
+    text-decoration:none;
+    color:var(--text-dim);
+    transition:color .2s ease;
+    padding-block:0.25rem;
+    border-bottom:1px solid transparent;
+  }
+  .nav-links a:hover,.nav-links a:focus-visible{
+    color:var(--text);
+    border-color:var(--accent);
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;
+    padding-block:clamp(3rem,9vw,6.5rem) clamp(3.5rem,8vw,6rem);
+    overflow:hidden;
+    background-image:
+      linear-gradient(var(--line-soft) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:56px 56px;
+    background-position:center -1px;
+    -webkit-mask-image:linear-gradient(to bottom, black 0%, black 78%, transparent 100%);
+            mask-image:linear-gradient(to bottom, black 0%, black 78%, transparent 100%);
+  }
+  .hero-inner{
+    -webkit-mask-image:none; mask-image:none;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    align-items:center;
+    gap:clamp(2rem,5vw,4rem);
+  }
+  @media (max-width:900px){
+    .hero-grid{ grid-template-columns:1fr; }
+    .hero-orb-wrap{ order:-1; max-width:280px; margin-inline:auto; }
+  }
+  .status-line{
+    display:flex;
+    align-items:center;
+    gap:0.5rem;
+    font-family:var(--font-mono);
+    font-size:0.75rem;
+    color:var(--text-faint);
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    margin-bottom:1.1rem;
+  }
+  .status-dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--balance);
+    box-shadow:0 0 0 3px var(--accent-wash);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion:reduce){ .status-dot{ animation:none; } }
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
+
+  .wordmark{
+    font-size:clamp(3.6rem,13vw,9rem);
+    font-weight:900;
+    letter-spacing:0.005em;
+    margin-bottom:0.9rem;
+  }
+
+  .cycle-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:0.5em;
+    font-family:var(--font-mono);
+    font-size:clamp(0.85rem,1.6vw,1.05rem);
+    color:var(--text-faint);
+    margin-bottom:1.6rem;
+  }
+  .cycle-row .sep{ color:var(--line); }
+  .cw{
+    transition:color .6s ease, text-shadow .6s ease;
+    cursor:default;
+  }
+  .cw.is-active{
+    color:var(--cw-color,var(--accent));
+    text-shadow:0 0 18px var(--cw-color,var(--accent));
+  }
+
+  .hero-lead{
+    font-size:clamp(1.05rem,2vw,1.25rem);
+    color:var(--text-dim);
+    max-width:46ch;
+    margin-bottom:2.2rem;
+  }
+  .hero-lead strong{ color:var(--text); font-weight:700; }
+
+  .cta-row{ display:flex; flex-wrap:wrap; gap:0.9rem; }
+  .btn{
+    font-family:var(--font-mono);
+    font-size:0.85rem;
+    letter-spacing:0.04em;
+    text-decoration:none;
+    padding:0.85rem 1.5rem;
+    border-radius:3px;
+    display:inline-flex;
+    align-items:center;
+    gap:0.5rem;
+    transition:transform .2s ease, background .2s ease, border-color .2s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); }
+  .btn-primary{
+    background:var(--accent);
+    color:#191207;
+    font-weight:600;
+    border:1px solid var(--accent);
+  }
+  .btn-primary:hover{ background:#f0b56f; }
+  .btn-ghost{
+    color:var(--text);
+    border:1px solid var(--line);
+    background:transparent;
+  }
+  .btn-ghost:hover{ border-color:var(--text-dim); }
+
+  /* ---------- hero orb ---------- */
+  .hero-orb-wrap{ position:relative; }
+  .orb-glow{
+    position:absolute;
+    inset:-10%;
+    background:radial-gradient(circle at 50% 45%, var(--accent-wash), transparent 65%);
+    filter:blur(6px);
+    z-index:0;
+  }
+  .orb-svg{ position:relative; z-index:1; width:100%; height:auto; }
+  .orb-path{
+    d:path("M200.0,70.0 C234.2,68.8 286.1,72.3 306.1,93.9 C326.1,115.6 320.6,165.2 320.0,200.0 C319.4,234.8 322.5,281.7 302.5,302.5 C282.5,323.4 235.4,323.8 200.0,325.0 C164.6,326.2 110.1,330.4 90.4,309.6 C70.7,288.8 80.2,234.8 82.0,200.0 C83.8,165.2 81.3,122.7 101.0,101.0 C120.7,79.3 165.8,71.2 200.0,70.0 Z");
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .orb-path{ animation:orbMorph 18s ease-in-out infinite; }
+    .stop-a{ animation:hueA 18s linear infinite; }
+    .stop-b{ animation:hueB 18s linear infinite; }
+    .stop-c{ animation:hueC 18s linear infinite; }
+  }
+  @keyframes orbMorph{
+    0%,100%{ d:path("M200.0,70.0 C234.2,68.8 286.1,72.3 306.1,93.9 C326.1,115.6 320.6,165.2 320.0,200.0 C319.4,234.8 322.5,281.7 302.5,302.5 C282.5,323.4 235.4,323.8 200.0,325.0 C164.6,326.2 110.1,330.4 90.4,309.6 C70.7,288.8 80.2,234.8 82.0,200.0 C83.8,165.2 81.3,122.7 101.0,101.0 C120.7,79.3 165.8,71.2 200.0,70.0 Z"); }
+    25%{ d:path("M200.0,50.0 C227.7,49.4 261.5,90.1 284.9,115.1 C308.2,140.1 341.2,172.9 340.0,200.0 C338.8,227.1 301.1,252.8 277.8,277.8 C254.4,302.8 228.3,347.6 200.0,350.0 C171.7,352.4 132.2,316.9 108.1,291.9 C83.9,266.9 53.2,228.9 55.0,200.0 C56.8,171.1 94.5,143.7 118.7,118.7 C142.8,93.7 172.3,50.6 200.0,50.0 Z"); }
+    55%{ d:path("M200.0,80.0 C233.6,79.4 276.7,77.5 302.5,97.5 C328.4,117.5 357.4,168.2 355.0,200.0 C352.6,231.8 314.2,270.1 288.4,288.4 C262.6,306.7 232.4,307.1 200.0,310.0 C167.6,312.9 115.6,324.4 93.9,306.1 C72.3,287.7 68.8,234.2 70.0,200.0 C71.2,165.8 79.3,121.0 101.0,101.0 C122.7,81.0 166.4,80.6 200.0,80.0 Z"); }
+    80%{ d:path("M200.0,60.0 C227.7,61.8 256.1,98.9 277.8,122.2 C299.4,145.6 325.3,169.4 330.0,200.0 C334.7,230.6 327.7,282.7 306.1,306.1 C284.4,329.4 231.2,344.1 200.0,340.0 C168.8,335.9 143.7,304.7 118.7,281.3 C93.7,258.0 51.2,228.3 50.0,200.0 C48.8,171.7 86.6,134.9 111.6,111.6 C136.6,88.3 172.3,58.2 200.0,60.0 Z"); }
+  }
+  @keyframes hueA{ 0%,100%{ stop-color:var(--flow); } 25%{ stop-color:var(--observe); } 50%{ stop-color:var(--tune); } 75%{ stop-color:var(--iterate); } }
+  @keyframes hueB{ 0%,100%{ stop-color:var(--observe); } 25%{ stop-color:var(--tune); } 50%{ stop-color:var(--iterate); } 75%{ stop-color:var(--balance); } }
+  @keyframes hueC{ 0%,100%{ stop-color:var(--balance); } 25%{ stop-color:var(--flow); } 50%{ stop-color:var(--observe); } 75%{ stop-color:var(--tune); } }
+
+  /* ---------- section shell ---------- */
+  section{ padding-block:clamp(3.5rem,8vw,6.5rem); }
+  .section-head{ max-width:60ch; margin-bottom:clamp(2.2rem,5vw,3.5rem); }
+  .section-head h2{ font-size:clamp(2.1rem,5vw,3.2rem); margin-top:0.5rem; margin-bottom:1rem; }
+  .section-head .lead{ font-size:1.05rem; color:var(--text-dim); }
+  .divider{ border:none; border-top:1px solid var(--line-soft); margin:0; }
+
+  /* ---------- philosophy ---------- */
+  .philosophy{ background:var(--bg-inset); }
+  .loop-figure{ margin-block:clamp(1.5rem,4vw,2.5rem) clamp(2.5rem,5vw,3.5rem); }
+  .loop-figure svg{ width:100%; max-width:520px; margin-inline:auto; color:var(--text-faint); }
+  .loop-node circle{ stroke:var(--bg-inset); stroke-width:4; }
+  .loop-index{ font-family:var(--font-mono); font-size:15px; font-weight:600; fill:#161008; text-anchor:middle; dominant-baseline:central; }
+  .loop-label{ font-family:var(--font-mono); font-size:14px; letter-spacing:0.08em; fill:var(--text-dim); }
+  .loop-arc{ fill:none; stroke-width:2.5; opacity:0.75; }
+  figcaption{
+    font-family:var(--font-mono);
+    font-size:0.8rem;
+    color:var(--text-faint);
+    text-align:center;
+    max-width:46ch;
+    margin-inline:auto;
+    margin-top:1.25rem;
+    line-height:1.6;
+  }
+
+  .stage-list{ display:flex; flex-direction:column; }
+  .stage{
+    display:grid;
+    grid-template-columns:3.2rem 12rem 1fr;
+    gap:1.25rem;
+    align-items:baseline;
+    padding-block:1.4rem;
+    border-top:1px solid var(--line-soft);
+  }
+  .stage:last-child{ border-bottom:1px solid var(--line-soft); }
+  @media (max-width:760px){
+    .stage{ grid-template-columns:2.4rem 1fr; }
+    .stage-desc{ grid-column:1 / -1; padding-left:2.4rem; margin-top:0.4rem; }
+  }
+  .stage-index{
+    font-family:var(--font-mono);
+    font-size:0.85rem;
+    color:var(--stage-color);
+  }
+  .stage-name{
+    font-family:var(--font-display);
+    font-weight:800;
+    text-transform:uppercase;
+    font-size:1.3rem;
+    color:var(--text);
+  }
+  .stage-name small{
+    display:block;
+    font-family:var(--font-mono);
+    text-transform:none;
+    font-weight:500;
+    font-size:0.75rem;
+    letter-spacing:0.05em;
+    color:var(--stage-color);
+    margin-top:0.15rem;
+  }
+  .stage-desc{ color:var(--text-dim); font-size:0.98rem; max-width:52ch; }
+  .loop-note{
+    font-family:var(--font-mono);
+    font-size:0.8rem;
+    color:var(--text-faint);
+    margin-top:1.2rem;
+    display:flex;
+    align-items:center;
+    gap:0.4rem;
+  }
+  .loop-note .arrow{ color:var(--flow); }
+
+  /* ---------- works ---------- */
+  .log-list{ display:flex; flex-direction:column; }
+  .log-entry{
+    display:grid;
+    grid-template-columns:14rem 1fr;
+    gap:2rem;
+    padding-block:2.2rem;
+    border-top:1px solid var(--line-soft);
+  }
+  .log-list .log-entry:last-child{ border-bottom:1px solid var(--line-soft); }
+  @media (max-width:760px){
+    .log-entry{ grid-template-columns:1fr; gap:0.8rem; }
+  }
+  .log-meta{ display:flex; flex-direction:column; gap:0.6rem; }
+  .log-index{ font-family:var(--font-mono); font-size:0.85rem; color:var(--text-faint); }
+  .log-tag{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    letter-spacing:0.06em;
+    color:var(--phase-color);
+    border:1px solid var(--phase-color);
+    background:color-mix(in srgb, var(--phase-color) 12%, transparent);
+    padding:0.3rem 0.6rem;
+    border-radius:999px;
+    width:fit-content;
+  }
+  .log-title{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-weight:800;
+    font-size:1.6rem;
+    margin-bottom:0.5rem;
+  }
+  .log-spec{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+    margin-bottom:0.8rem;
+    letter-spacing:0.02em;
+  }
+  .log-desc{ color:var(--text-dim); max-width:60ch; margin-bottom:0.9rem; }
+  .log-link{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+    display:inline-flex;
+    align-items:center;
+    gap:0.4rem;
+  }
+  .log-link.is-pending::before{
+    content:"";
+    width:5px;height:5px;border-radius:50%;
+    background:var(--text-faint);
+  }
+  .log-entry.is-ghost{ opacity:0.55; }
+  .log-entry.is-ghost .log-title{ font-style:normal; }
+
+  /* ---------- footer ---------- */
+  .site-footer{
+    border-top:1px solid var(--line-soft);
+    padding-block:2.5rem 3rem;
+  }
+  .footer-top{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:1.5rem;
+    margin-bottom:1.8rem;
+  }
+  .footer-brand{ display:flex; align-items:center; gap:0.8rem; }
+  .footer-brand .wordmark-small{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:1.4rem;
+    text-transform:uppercase;
+  }
+  .footer-dots span{ width:8px;height:8px; }
+  .footer-tagline{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+  }
+  .footer-contact{
+    font-family:var(--font-mono);
+    font-size:0.8rem;
+    color:var(--text-faint);
+  }
+  .footer-note{
+    font-size:0.85rem;
+    color:var(--text-faint);
+    margin-bottom:1rem;
+  }
+  .footer-bottom{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    gap:1rem;
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--text-faint);
+    padding-top:1.4rem;
+    border-top:1px solid var(--line-soft);
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="#top">
+      <span class="wordmark-small">FOTIB</span>
+      <span class="phase-dots" aria-hidden="true">
+        <span style="--dot-color:var(--flow)"></span>
+        <span style="--dot-color:var(--observe)"></span>
+        <span style="--dot-color:var(--tune)"></span>
+        <span style="--dot-color:var(--iterate)"></span>
+        <span style="--dot-color:var(--balance)"></span>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="#philosophy">철학</a>
+      <a href="#works">작업 기록</a>
+      <a href="#contact">연락</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <header class="hero" id="top">
+    <div class="wrap hero-inner">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <p class="status-line"><span class="status-dot" aria-hidden="true"></span>STATUS · ACTIVE LOOP</p>
+          <h1 class="wordmark">FOTIB</h1>
+          <p class="cycle-row" id="cycleRow">
+            <span class="cw" style="--cw-color:var(--flow)" data-word="flow">Flow</span><span class="sep">·</span><span class="cw" style="--cw-color:var(--observe)" data-word="observe">Observe</span><span class="sep">·</span><span class="cw" style="--cw-color:var(--tune)" data-word="tune">Tune</span><span class="sep">·</span><span class="cw" style="--cw-color:var(--iterate)" data-word="iterate">Iterate</span><span class="sep">·</span><span class="cw" style="--cw-color:var(--balance)" data-word="balance">Balance</span>
+          </p>
+          <p class="hero-lead"><strong>완성이 아니라, 순환입니다.</strong> FOTIB는 다섯 단계를 따라 자연스럽게 성장하는 방식을 관찰하고, 그 위에서 진행 중인 여러 작업을 기록하는 개인 연구소입니다.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#works">작업 기록 보기 ↓</a>
+            <a class="btn btn-ghost" href="#philosophy">철학 읽기</a>
+          </div>
+        </div>
+        <div class="hero-orb-wrap">
+          <div class="orb-glow" aria-hidden="true"></div>
+          <svg class="orb-svg" viewBox="0 0 400 400" aria-hidden="true">
+            <defs>
+              <linearGradient id="orbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop class="stop-a" offset="0%" stop-color="#5AA9E6"/>
+                <stop class="stop-b" offset="50%" stop-color="#9B7EDE"/>
+                <stop class="stop-c" offset="100%" stop-color="#5FBF95"/>
+              </linearGradient>
+            </defs>
+            <path class="orb-path" fill="url(#orbGrad)" fill-opacity="0.9"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="philosophy" id="philosophy">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">THE FOTIB LOOP</p>
+        <h2>성장은 순환합니다</h2>
+        <p class="lead">이건 제가 관찰해온 자연스러운 성장의 궤도입니다. 프로젝트 하나든 하루의 루틴이든, 같은 다섯 단계를 따라 돌아갑니다. 이 사이트는 그 궤도 위에서 지금 제가 어디에 있는지를 기록하는 공간입니다.</p>
+      </div>
+
+      <figure class="loop-figure">
+        <svg viewBox="-40 -20 600 560" role="img" aria-label="Flow에서 Observe, Tune, Iterate를 거쳐 Balance에 이른 뒤 다시 Flow로 돌아오는 다섯 단계의 순환 다이어그램">
+          <path class="loop-arc" d="M284.3,87.6 Q366.6,100.5 406.7,176.6" stroke="var(--flow)"/>
+          <path class="loop-arc" d="M431.4,229.8 Q444.6,312.1 384.7,373.8" stroke="var(--observe)"/>
+          <path class="loop-arc" d="M341.7,413.7 Q267.5,451.7 190.3,413.7" stroke="var(--tune)"/>
+          <path class="loop-arc" d="M139.1,385.2 Q80.0,326.3 92.3,241.2" stroke="var(--iterate)"/>
+          <path class="loop-arc" d="M103.6,183.7 Q141.3,109.3 226.0,94.7" stroke="var(--balance)"/>
+
+          <g class="loop-node">
+            <circle cx="260" cy="70" r="28" fill="var(--flow)"/>
+            <text class="loop-index" x="260" y="71">01</text>
+            <text class="loop-label" x="260" y="30" text-anchor="middle">FLOW</text>
+          </g>
+          <g class="loop-node">
+            <circle cx="440.7" cy="201.3" r="28" fill="var(--observe)"/>
+            <text class="loop-index" x="440.7" y="202.3">02</text>
+            <text class="loop-label" x="484" y="192" text-anchor="start">OBSERVE</text>
+          </g>
+          <g class="loop-node">
+            <circle cx="371.7" cy="413.7" r="28" fill="var(--tune)"/>
+            <text class="loop-index" x="371.7" y="414.7">03</text>
+            <text class="loop-label" x="371.7" y="465" text-anchor="middle">TUNE</text>
+          </g>
+          <g class="loop-node">
+            <circle cx="148.3" cy="413.7" r="28" fill="var(--iterate)"/>
+            <text class="loop-index" x="148.3" y="414.7">04</text>
+            <text class="loop-label" x="148.3" y="465" text-anchor="middle">ITERATE</text>
+          </g>
+          <g class="loop-node">
+            <circle cx="79.3" cy="201.3" r="28" fill="var(--balance)"/>
+            <text class="loop-index" x="79.3" y="202.3">05</text>
+            <text class="loop-label" x="36" y="192" text-anchor="end">BALANCE</text>
+          </g>
+        </svg>
+        <figcaption>Flow → Observe → Tune → Iterate → Balance → 다시 Flow. 다섯 단계는 끝나지 않고 순환합니다.</figcaption>
+      </figure>
+
+      <ol class="stage-list">
+        <li class="stage" style="--stage-color:var(--flow)">
+          <span class="stage-index">01</span>
+          <span class="stage-name">Flow<small>흐름</small></span>
+          <p class="stage-desc">관심이 흐르는 방향을 억지로 막지 않고, 에너지가 향하는 곳에서 시작합니다.</p>
+        </li>
+        <li class="stage" style="--stage-color:var(--observe)">
+          <span class="stage-index">02</span>
+          <span class="stage-name">Observe<small>관찰</small></span>
+          <p class="stage-desc">판단보다 관찰이 먼저입니다. 만들어진 것과 벌어진 일을 있는 그대로 지켜봅니다.</p>
+        </li>
+        <li class="stage" style="--stage-color:var(--tune)">
+          <span class="stage-index">03</span>
+          <span class="stage-name">Tune<small>조율</small></span>
+          <p class="stage-desc">관찰한 것을 근거로 미세하게 조정합니다. 악기를 조율하듯 예민하게.</p>
+        </li>
+        <li class="stage" style="--stage-color:var(--iterate)">
+          <span class="stage-index">04</span>
+          <span class="stage-name">Iterate<small>반복</small></span>
+          <p class="stage-desc">조율된 상태로 다시 실행하고, 그 결과를 다음 루프의 재료로 삼습니다.</p>
+        </li>
+        <li class="stage" style="--stage-color:var(--balance)">
+          <span class="stage-index">05</span>
+          <span class="stage-name">Balance<small>균형</small></span>
+          <p class="stage-desc">여러 번의 반복이 쌓여 만들어내는 잠깐의 안정. 완성이 아니라 다음 흐름을 위한 정지입니다.</p>
+        </li>
+      </ol>
+      <p class="loop-note"><span class="arrow">↳</span> Balance는 끝이 아니라 다시 Flow로 이어집니다.</p>
+    </div>
+  </section>
+
+  <section class="works" id="works">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">LAB LOG</p>
+        <h2>작업 기록</h2>
+        <p class="lead">다양한 주제를 연구하고, 수행하고, 개선하는 과정을 이 순환 위에 기록합니다. 각 기록에는 지금 머물러 있는 단계를 함께 표시합니다.</p>
+      </div>
+
+      <div class="log-list">
+        <article class="log-entry" style="--phase-color:var(--tune)">
+          <div class="log-meta">
+            <span class="log-index">LOG_01</span>
+            <span class="log-tag">TUNE · 조율</span>
+          </div>
+          <div>
+            <h3 class="log-title">매크로패드 자작</h3>
+            <p class="log-spec">RP2040-Zero · Cherry MX Red · 6-Key · Direct-Wired USB</p>
+            <p class="log-desc">트레이딩 환경을 위한 초저지연 입력 장치. 무선 대신 유선 USB를 선택했고, 다이오드 매트릭스 없이 직결 배선으로 6개 키를 구성 중입니다. 다음 단계로 커스텀 매트릭스 PCB 설계와 발주를 준비하고 있습니다.</p>
+            <span class="log-link is-pending">기록 링크 · 준비 중</span>
+          </div>
+        </article>
+
+        <article class="log-entry" style="--phase-color:var(--observe)">
+          <div class="log-meta">
+            <span class="log-index">LOG_02</span>
+            <span class="log-tag">OBSERVE · 관찰</span>
+          </div>
+          <div>
+            <h3 class="log-title">유틸리티 사이트 (AdSense)</h3>
+            <p class="log-spec">Google AdSense · Education Theme · KR</p>
+            <p class="log-desc">구글 애드센스로 수익화할 유틸리티 사이트를 준비 중입니다. 금융보다 심사가 수월한 교육 테마 쪽 방향을 관찰하고 있고, 학부모가 많은 커뮤니티를 통한 노출을 함께 고려하고 있습니다.</p>
+            <span class="log-link is-pending">기록 링크 · 준비 중</span>
+          </div>
+        </article>
+
+        <article class="log-entry is-ghost" style="--phase-color:var(--flow)">
+          <div class="log-meta">
+            <span class="log-index">LOG_03</span>
+            <span class="log-tag">FLOW · 흐름</span>
+          </div>
+          <div>
+            <h3 class="log-title">다음 기록</h3>
+            <p class="log-desc">다음 흐름을 관찰하는 중입니다. 새 작업이 시작되면 이곳에 기록됩니다.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" id="contact">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="wordmark-small">FOTIB</span>
+        <span class="phase-dots footer-dots" aria-hidden="true">
+          <span style="--dot-color:var(--flow)"></span>
+          <span style="--dot-color:var(--observe)"></span>
+          <span style="--dot-color:var(--tune)"></span>
+          <span style="--dot-color:var(--iterate)"></span>
+          <span style="--dot-color:var(--balance)"></span>
+        </span>
+      </div>
+      <p class="footer-tagline">FLOW · OBSERVE · TUNE · ITERATE · BALANCE</p>
+    </div>
+    <p class="footer-note">이 사이트는 완성된 페이지가 아니라, 계속 순환하며 갱신되는 기록입니다.</p>
+    <p class="footer-contact">연락처 · 준비 중</p>
+    <div class="footer-bottom">
+      <span>© 2026 FOTIB LABS</span>
+      <span>ALL LOGS IN PROGRESS</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function(){
+    var words = Array.prototype.slice.call(document.querySelectorAll('#cycleRow .cw'));
+    if(!words.length) return;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var i = 0;
+    function setActive(idx){
+      words.forEach(function(w,wi){ w.classList.toggle('is-active', wi===idx); });
+    }
+    setActive(0);
+    if(reduce) return;
+    setInterval(function(){
+      i = (i+1) % words.length;
+      setActive(i);
+    }, 2200);
+  })();
+</script>
+</body>
+</html>
