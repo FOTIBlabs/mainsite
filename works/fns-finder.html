@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FNS 파인더 — FOTIB Labs</title>
+<meta name="description" content="yFinance·Finnhub·SEC EDGAR 기반 미국주식 Float·공매도·뉴스·공시 리서치 도구 FNS Finder의 구조와 설계 의도 — FOTIB LOG_02.">
+<meta name="theme-color" content="#0A0D12">
+<link rel="canonical" href="https://fotiblabs.com/works/fns-finder.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FOTIB Labs">
+<meta property="og:title" content="FNS 파인더">
+<meta property="og:description" content="yFinance·Finnhub·SEC EDGAR 기반 미국주식 Float·공매도·뉴스·공시 리서치 도구의 구조와 설계 의도.">
+<meta property="og:url" content="https://fotiblabs.com/works/fns-finder.html">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0A0D12;
+    --bg-raised:#12161E;
+    --bg-inset:#060809;
+    --line:#232935;
+    --line-soft:#171C25;
+    --text:#ECE9E2;
+    --text-dim:#939AA8;
+    --text-faint:#565D6B;
+    --accent:#E8A659;
+    --accent-wash:rgba(232,166,89,0.12);
+    --flow:#5AA9E6;
+    --observe:#9B7EDE;
+    --tune:#E8A659;
+    --iterate:#E8735A;
+    --balance:#5FBF95;
+    --phase-color:var(--observe);
+    --font-display:'Big Shoulders Display',system-ui,sans-serif;
+    --font-body:'Manrope',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    color-scheme:dark;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:inherit; }
+  p{ margin:0; }
+  ul,ol{ margin:0; padding:0; }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding-inline:clamp(1.25rem,4vw,3rem);
+  }
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:0.75rem;
+    font-weight:500;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:sticky;
+    top:0;
+    z-index:40;
+    background:rgba(10,13,18,0.82);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0.85rem clamp(1.25rem,4vw,3rem);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+  }
+  .nav-brand{
+    display:flex;
+    align-items:center;
+    gap:0.7rem;
+    text-decoration:none;
+  }
+  .nav-brand .wordmark-small{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:1.15rem;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .phase-dots{ display:flex; align-items:center; gap:0.3rem; }
+  .phase-dots span{ width:6px;height:6px;border-radius:50%; background:var(--dot-color); display:inline-block; }
+  .nav-back{
+    font-family:var(--font-mono);
+    font-size:0.8rem;
+    letter-spacing:0.02em;
+    text-decoration:none;
+    color:var(--text-dim);
+    display:inline-flex;
+    align-items:center;
+    gap:0.4rem;
+    transition:color .2s ease;
+  }
+  .nav-back:hover,.nav-back:focus-visible{ color:var(--text); }
+
+  /* ---------- article header ---------- */
+  .article-header{
+    padding-block:clamp(2.5rem,6vw,4.5rem) clamp(2rem,4vw,3rem);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .article-meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:0.6rem;
+    margin-bottom:1.1rem;
+  }
+  .phase-tag{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    letter-spacing:0.06em;
+    color:var(--phase-color);
+    border:1px solid var(--phase-color);
+    background:color-mix(in srgb, var(--phase-color) 12%, transparent);
+    padding:0.3rem 0.6rem;
+    border-radius:999px;
+  }
+  .log-index-tag{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+  }
+  h1.article-title{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-weight:800;
+    line-height:0.98;
+    text-wrap:balance;
+    font-size:clamp(2.4rem,6vw,4rem);
+    margin:0 0 1rem;
+  }
+  .article-specline{
+    font-family:var(--font-mono);
+    font-size:0.85rem;
+    color:var(--text-faint);
+    letter-spacing:0.02em;
+    margin-bottom:1.4rem;
+  }
+  .article-lead{
+    font-size:clamp(1.05rem,2vw,1.2rem);
+    color:var(--text-dim);
+    max-width:62ch;
+  }
+
+  /* ---------- article body ---------- */
+  .article-body{
+    padding-block:clamp(2.5rem,6vw,4rem);
+  }
+  .article-body .prose{
+    max-width:68ch;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:1.1rem;
+  }
+  .prose h2{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-weight:800;
+    font-size:clamp(1.4rem,3vw,1.8rem);
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--text);
+    margin-top:1.6rem;
+  }
+  .prose h2 .num{
+    font-family:var(--font-mono);
+    font-weight:500;
+    color:var(--phase-color);
+    font-size:0.6em;
+    letter-spacing:0.1em;
+    display:block;
+    text-transform:uppercase;
+    margin-bottom:0.3rem;
+  }
+  .prose p{
+    color:var(--text-dim);
+    font-size:1.02rem;
+    line-height:1.8;
+  }
+  .prose p strong{ color:var(--text); font-weight:700; }
+  .prose code{
+    font-family:var(--font-mono);
+    font-size:0.88em;
+    color:var(--accent);
+    background:var(--accent-wash);
+    padding:0.1em 0.4em;
+    border-radius:4px;
+  }
+  .code-block{
+    background:var(--bg-inset);
+    border:1px solid var(--line-soft);
+    border-radius:8px;
+    padding:1.1rem 1.3rem;
+    overflow-x:auto;
+    margin-block:0.3rem;
+  }
+  .code-block pre{
+    margin:0;
+    font-family:var(--font-mono);
+    font-size:0.82rem;
+    line-height:1.7;
+    color:var(--text-dim);
+    white-space:pre;
+  }
+  .code-block .c1{ color:var(--text-faint); }
+  .code-caption{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .prose ul{
+    display:flex;
+    flex-direction:column;
+    gap:0.6rem;
+    padding-left:0;
+  }
+  .prose ul li{
+    list-style:none;
+    color:var(--text-dim);
+    font-size:1.02rem;
+    line-height:1.7;
+    padding-left:1.4rem;
+    position:relative;
+  }
+  .prose ul li::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0.65em;
+    width:6px;height:6px;border-radius:50%;
+    background:var(--phase-color);
+  }
+  .prose ul li strong{ color:var(--text); font-weight:700; }
+  .status-block{
+    border:1px solid var(--line-soft);
+    background:var(--bg-raised);
+    border-radius:10px;
+    padding:1.4rem 1.6rem;
+    margin-top:0.6rem;
+  }
+  .status-block p{ margin:0; }
+  .article-divider{
+    border:none;
+    border-top:1px solid var(--line-soft);
+    margin-block:0.4rem;
+  }
+
+  /* ---------- footer ---------- */
+  .site-footer{
+    border-top:1px solid var(--line-soft);
+    padding-block:2.5rem 3rem;
+  }
+  .footer-top{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:1.5rem;
+    margin-bottom:1.2rem;
+  }
+  .footer-brand{ display:flex; align-items:center; gap:0.8rem; }
+  .footer-brand .wordmark-small{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:1.4rem;
+    text-transform:uppercase;
+  }
+  .footer-dots span{ width:8px;height:8px; }
+  .footer-tagline{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+  }
+  .footer-bottom{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    gap:1rem;
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--text-faint);
+    padding-top:1.4rem;
+    border-top:1px solid var(--line-soft);
+    margin-top:1.4rem;
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">
+      <span class="wordmark-small">FOTIB</span>
+      <span class="phase-dots" aria-hidden="true">
+        <span style="--dot-color:var(--flow)"></span>
+        <span style="--dot-color:var(--observe)"></span>
+        <span style="--dot-color:var(--tune)"></span>
+        <span style="--dot-color:var(--iterate)"></span>
+        <span style="--dot-color:var(--balance)"></span>
+      </span>
+    </a>
+    <a class="nav-back" href="/#works">← 작업 기록으로</a>
+  </div>
+</nav>
+
+<article>
+  <header class="article-header">
+    <div class="wrap">
+      <div class="article-meta-row">
+        <span class="log-index-tag">LOG_02</span>
+        <span class="phase-tag">OBSERVE · 관찰</span>
+      </div>
+      <h1 class="article-title">FNS 파인더</h1>
+      <p class="article-specline">Float · NEWS · SEC Finder v1.2.7 · yFinance · Finnhub Stock API · SEC EDGAR · Azure AI Translator · CustomTkinter</p>
+      <p class="article-lead">자동매매를 켜기 전, 사람이 먼저 확인해야 하는 것들이 있습니다. 유동주식과 공매도 비율, 최근 뉴스, SEC 공시 — 이 도구는 그 관찰 과정을 티커 하나, 조회 버튼 하나로 압축합니다.</p>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+      <div class="prose">
+
+        <p>미국주식 티커 하나를 입력하면 Float(유동주식)과 공매도 비율, 최근 3개월 뉴스, 최근 3개월 SEC 공시를 한 화면에 모아 보여주는 데스크톱 리서치 도구입니다. LOG_01의 자동매매 엔진이 <strong>실행</strong>을 담당한다면, 이 도구는 그 실행 이전에 항상 거치는 <strong>관찰</strong> 단계를 압축해둔 것입니다.</p>
+
+        <h2><span class="num">01</span>왜 만들었나</h2>
+        <p>Float, 공매도 비율, 뉴스, SEC 공시를 매번 서로 다른 사이트에서 하나씩 찾아보는 과정을 한 화면으로 모았습니다. 프로그램을 켤 때마다 로그인 창에서 이메일 하나를 입력받아 이후 모든 SEC 요청의 User-Agent로 자동 사용하고, Finnhub·Azure Translator API 키도 선택 입력받아 이후 요청에 재사용합니다.</p>
+
+        <h2><span class="num">02</span>구조 — 조회 한 번, 백그라운드 스레드 하나</h2>
+        <p>조회 버튼을 누르면 별도 스레드에서 yfinance의 <code>Ticker.get_info()</code>를 호출해 <code>floatShares</code>·<code>shortPercentOfFloat</code>을 가져옵니다. 야후 응답이 가끔 비어오는 경우를 대비해 1회 재시도하고, 결과는 <code>self.after(0, ...)</code>로 메인 스레드에 넘겨 화면을 갱신합니다 — LOG_01의 트레이딩 엔진과 동일한, GUI를 막지 않는 스레드 패턴입니다. <code>floatShares</code>가 없으면 ETF이거나 잘못된 티커로 보고 안내창을 띄웁니다.</p>
+
+        <h2><span class="num">03</span>뉴스는 두 곳에서, 실제로 관련 있는 것만</h2>
+        <p>야후파이낸스와 Finnhub Stock News API 양쪽에서 최근 3개월 뉴스를 각각 조회합니다. 제목에 티커 또는 회사명이 단어 경계로 실제 포함된 것만 남기고 나머지는 버립니다 — 회사명은 "NVIDIA Corporation" → "NVIDIA"처럼 법인 접미사를 뗀 코어네임으로 비교해, 관련 없는 뉴스가 섞이는 걸 막습니다. Finnhub는 기간 내 뉴스를 개수 제한 없이 반환하기 때문에(인기 종목은 수백 건) 최신순 25건까지만 잘라 번역·표시 시간을 줄입니다.</p>
+        <div class="code-block">
+          <pre><span class="c1"># 티커 또는 회사명(접미사 제거)이 단어 경계로 실제 포함된 제목만 통과</span>
+pattern = re.compile(r"(?&lt;![a-z0-9])" + re.escape(ticker_clean) + r"(?![a-z0-9])")
+<span class="c1"># "NVDA"가 다른 단어의 일부로 우연히 걸리는 오탐을 여기서 차단</span></pre>
+        </div>
+
+        <h2><span class="num">04</span>번역은 계정별 키로</h2>
+        <p>뉴스·공시 제목은 MS Azure AI Translator 무료 티어(월 200만자, 영구 무료)로 한글 번역합니다. 계정마다 발급받는 키를 쓰기 때문에 구글 번역 비공식 엔드포인트처럼 공용 IP가 차단당할 위험이 없습니다. 키를 비워두면 원문을 그대로 보여주고, 번역이 실패해도 조용히 원문을 반환합니다 — <code>--windowed</code> exe는 콘솔이 보이지 않으므로 실패 사유는 별도 로그 파일에 남깁니다.</p>
+
+        <h2><span class="num">05</span>SEC 공시 — "없음"과 "못 봄"을 구분하기</h2>
+        <p>SEC 조회 결과는 세 가지 상태로 나눕니다: 그 기간에 실제로 공시가 없는 것(정상, 빈 목록), SEC 서버 접근이 막히거나 네트워크 오류로 조회 자체에 실패한 것(403/429 등), 티커가 SEC 등록 목록에 없는 것. 이 셋을 뭉뚱그리면 "공시가 없나보다"로 잘못 읽히기 쉬워서, 화면에 상태별로 다른 안내 문구를 띄웁니다. 최근 제출 목록에 10-K가 한 번이라도 있으면 미국기업으로 보고 10-K/10-Q/8-K를, 없으면 외국기업(FPI)으로 판단해 20-F/6-K를 대신 조회합니다.</p>
+
+        <h2><span class="num">06</span>슬롯 6개 — 즉석 워치리스트</h2>
+        <p>조회한 결과를 우측 슬롯(1~6) 중 빈 자리에 저장해두고, 버튼 클릭 한 번으로 다시 불러봅니다. 정식 워치리스트 기능 없이도 그날 보고 있는 종목 몇 개를 잠깐 붙여두는 용도로 씁니다. S/F 칸을 누르면 창 "항상 위"를 켜고 끌 수 있어, 다른 창들 사이에서도 계속 보이게 고정해둘 수 있습니다.</p>
+
+        <h2><span class="num">07</span>지금 이 자리</h2>
+        <div class="status-block">
+          <p>버전 1.2.7. 매매 판단 이전에 늘 거치는 관찰 과정 자체를 도구로 옮겨온 것이라, LOG_01의 자동매매 엔진과 한 쌍으로 씁니다. 지금은 새 기능을 더하기보다, 이 관찰 습관을 그대로 유지하며 필터링 정확도와 조회 속도를 다듬는 단계입니다.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</article>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="wordmark-small">FOTIB</span>
+        <span class="phase-dots footer-dots" aria-hidden="true">
+          <span style="--dot-color:var(--flow)"></span>
+          <span style="--dot-color:var(--observe)"></span>
+          <span style="--dot-color:var(--tune)"></span>
+          <span style="--dot-color:var(--iterate)"></span>
+          <span style="--dot-color:var(--balance)"></span>
+        </span>
+      </div>
+      <p class="footer-tagline">FLOW · OBSERVE · TUNE · ITERATE · BALANCE</p>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 FOTIB LABS</span>
+      <a class="nav-back" href="/">FOTIB 홈으로</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
