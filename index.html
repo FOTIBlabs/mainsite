@@ -419,6 +419,17 @@
     width:5px;height:5px;border-radius:50%;
     background:var(--text-faint);
   }
+  .log-link.is-active{
+    color:var(--phase-color);
+    text-decoration:none;
+    border-bottom:1px solid transparent;
+    transition:border-color .2s ease, gap .2s ease;
+  }
+  .log-link.is-active:hover,
+  .log-link.is-active:focus-visible{
+    border-color:var(--phase-color);
+    gap:0.6rem;
+  }
   .log-entry.is-ghost{ opacity:0.55; }
   .log-entry.is-ghost .log-title{ font-style:normal; }
 
@@ -612,9 +623,22 @@
       </div>
 
       <div class="log-list">
-        <article class="log-entry" style="--phase-color:var(--tune)">
+        <article class="log-entry" style="--phase-color:var(--iterate)">
           <div class="log-meta">
             <span class="log-index">LOG_01</span>
+            <span class="log-tag">ITERATE · 반복</span>
+          </div>
+          <div>
+            <h3 class="log-title">키움 자동매매 스탑 엔진</h3>
+            <p class="log-spec">Kiwoom REST/WebSocket API · Python · Tkinter · Telegram Bot</p>
+            <p class="log-desc">감정 개입 없이 익절·손절을 즉시 실행하는 개인용 자동매매 프로그램. 실시간 체결 이벤트로 보유수량을 상시 갱신하고, 이미 걸려있는 매도주문까지 고려해서 손절 물량을 확보하며, 정정이 실패하면 스스로 재계산해서 복구합니다. 실거래에서 관찰한 레이스 컨디션들을 하나씩 다듬어온 v16.3.</p>
+            <a class="log-link is-active" href="/works/kiwoom-auto-mirotic.html">자세히 보기 →</a>
+          </div>
+        </article>
+
+        <article class="log-entry" style="--phase-color:var(--tune)">
+          <div class="log-meta">
+            <span class="log-index">LOG_02</span>
             <span class="log-tag">TUNE · 조율</span>
           </div>
           <div>
@@ -627,7 +651,7 @@
 
         <article class="log-entry" style="--phase-color:var(--observe)">
           <div class="log-meta">
-            <span class="log-index">LOG_02</span>
+            <span class="log-index">LOG_03</span>
             <span class="log-tag">OBSERVE · 관찰</span>
           </div>
           <div>
@@ -640,7 +664,7 @@
 
         <article class="log-entry is-ghost" style="--phase-color:var(--flow)">
           <div class="log-meta">
-            <span class="log-index">LOG_03</span>
+            <span class="log-index">LOG_04</span>
             <span class="log-tag">FLOW · 흐름</span>
           </div>
           <div>
