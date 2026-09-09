@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>키움 자동매매 스탑 엔진 — FOTIB Labs</title>
+<meta name="description" content="Kiwoom REST/WebSocket API 기반 개인용 자동매매 스탑 엔진 Kium Auto Mirotic의 구조와 설계 의도 — FOTIB LOG_01.">
+<meta name="theme-color" content="#0A0D12">
+<link rel="canonical" href="https://fotiblabs.com/works/kiwoom-auto-mirotic.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FOTIB Labs">
+<meta property="og:title" content="키움 자동매매 스탑 엔진">
+<meta property="og:description" content="Kiwoom REST/WebSocket API 기반 개인용 자동매매 스탑 엔진의 구조와 설계 의도.">
+<meta property="og:url" content="https://fotiblabs.com/works/kiwoom-auto-mirotic.html">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0A0D12;
+    --bg-raised:#12161E;
+    --bg-inset:#060809;
+    --line:#232935;
+    --line-soft:#171C25;
+    --text:#ECE9E2;
+    --text-dim:#939AA8;
+    --text-faint:#565D6B;
+    --accent:#E8A659;
+    --accent-wash:rgba(232,166,89,0.12);
+    --flow:#5AA9E6;
+    --observe:#9B7EDE;
+    --tune:#E8A659;
+    --iterate:#E8735A;
+    --balance:#5FBF95;
+    --phase-color:var(--iterate);
+    --font-display:'Big Shoulders Display',system-ui,sans-serif;
+    --font-body:'Manrope',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    color-scheme:dark;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:inherit; }
+  p{ margin:0; }
+  ul,ol{ margin:0; padding:0; }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding-inline:clamp(1.25rem,4vw,3rem);
+  }
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:0.75rem;
+    font-weight:500;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:sticky;
+    top:0;
+    z-index:40;
+    background:rgba(10,13,18,0.82);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0.85rem clamp(1.25rem,4vw,3rem);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+  }
+  .nav-brand{
+    display:flex;
+    align-items:center;
+    gap:0.7rem;
+    text-decoration:none;
+  }
+  .nav-brand .wordmark-small{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:1.15rem;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .phase-dots{ display:flex; align-items:center; gap:0.3rem; }
+  .phase-dots span{ width:6px;height:6px;border-radius:50%; background:var(--dot-color); display:inline-block; }
+  .nav-back{
+    font-family:var(--font-mono);
+    font-size:0.8rem;
+    letter-spacing:0.02em;
+    text-decoration:none;
+    color:var(--text-dim);
+    display:inline-flex;
+    align-items:center;
+    gap:0.4rem;
+    transition:color .2s ease;
+  }
+  .nav-back:hover,.nav-back:focus-visible{ color:var(--text); }
+
+  /* ---------- article header ---------- */
+  .article-header{
+    padding-block:clamp(2.5rem,6vw,4.5rem) clamp(2rem,4vw,3rem);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .article-meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:0.6rem;
+    margin-bottom:1.1rem;
+  }
+  .phase-tag{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    letter-spacing:0.06em;
+    color:var(--phase-color);
+    border:1px solid var(--phase-color);
+    background:color-mix(in srgb, var(--phase-color) 12%, transparent);
+    padding:0.3rem 0.6rem;
+    border-radius:999px;
+  }
+  .log-index-tag{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+  }
+  h1.article-title{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-weight:800;
+    line-height:0.98;
+    text-wrap:balance;
+    font-size:clamp(2.4rem,6vw,4rem);
+    margin:0 0 1rem;
+  }
+  .article-specline{
+    font-family:var(--font-mono);
+    font-size:0.85rem;
+    color:var(--text-faint);
+    letter-spacing:0.02em;
+    margin-bottom:1.4rem;
+  }
+  .article-lead{
+    font-size:clamp(1.05rem,2vw,1.2rem);
+    color:var(--text-dim);
+    max-width:62ch;
+  }
+
+  /* ---------- article body ---------- */
+  .article-body{
+    padding-block:clamp(2.5rem,6vw,4rem);
+  }
+  .article-body .prose{
+    max-width:68ch;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:1.1rem;
+  }
+  .prose h2{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-weight:800;
+    font-size:clamp(1.4rem,3vw,1.8rem);
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--text);
+    margin-top:1.6rem;
+  }
+  .prose h2 .num{
+    font-family:var(--font-mono);
+    font-weight:500;
+    color:var(--phase-color);
+    font-size:0.6em;
+    letter-spacing:0.1em;
+    display:block;
+    text-transform:uppercase;
+    margin-bottom:0.3rem;
+  }
+  .prose p{
+    color:var(--text-dim);
+    font-size:1.02rem;
+    line-height:1.8;
+  }
+  .prose p strong{ color:var(--text); font-weight:700; }
+  .prose code{
+    font-family:var(--font-mono);
+    font-size:0.88em;
+    color:var(--accent);
+    background:var(--accent-wash);
+    padding:0.1em 0.4em;
+    border-radius:4px;
+  }
+  .code-block{
+    background:var(--bg-inset);
+    border:1px solid var(--line-soft);
+    border-radius:8px;
+    padding:1.1rem 1.3rem;
+    overflow-x:auto;
+    margin-block:0.3rem;
+  }
+  .code-block pre{
+    margin:0;
+    font-family:var(--font-mono);
+    font-size:0.82rem;
+    line-height:1.7;
+    color:var(--text-dim);
+    white-space:pre;
+  }
+  .code-block .c1{ color:var(--text-faint); }
+  .code-caption{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .prose ul{
+    display:flex;
+    flex-direction:column;
+    gap:0.6rem;
+    padding-left:0;
+  }
+  .prose ul li{
+    list-style:none;
+    color:var(--text-dim);
+    font-size:1.02rem;
+    line-height:1.7;
+    padding-left:1.4rem;
+    position:relative;
+  }
+  .prose ul li::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0.65em;
+    width:6px;height:6px;border-radius:50%;
+    background:var(--phase-color);
+  }
+  .prose ul li strong{ color:var(--text); font-weight:700; }
+  .status-block{
+    border:1px solid var(--line-soft);
+    background:var(--bg-raised);
+    border-radius:10px;
+    padding:1.4rem 1.6rem;
+    margin-top:0.6rem;
+  }
+  .status-block p{ margin:0; }
+  .article-divider{
+    border:none;
+    border-top:1px solid var(--line-soft);
+    margin-block:0.4rem;
+  }
+
+  /* ---------- footer ---------- */
+  .site-footer{
+    border-top:1px solid var(--line-soft);
+    padding-block:2.5rem 3rem;
+  }
+  .footer-top{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:1.5rem;
+    margin-bottom:1.2rem;
+  }
+  .footer-brand{ display:flex; align-items:center; gap:0.8rem; }
+  .footer-brand .wordmark-small{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:1.4rem;
+    text-transform:uppercase;
+  }
+  .footer-dots span{ width:8px;height:8px; }
+  .footer-tagline{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+  }
+  .footer-bottom{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    gap:1rem;
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--text-faint);
+    padding-top:1.4rem;
+    border-top:1px solid var(--line-soft);
+    margin-top:1.4rem;
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">
+      <span class="wordmark-small">FOTIB</span>
+      <span class="phase-dots" aria-hidden="true">
+        <span style="--dot-color:var(--flow)"></span>
+        <span style="--dot-color:var(--observe)"></span>
+        <span style="--dot-color:var(--tune)"></span>
+        <span style="--dot-color:var(--iterate)"></span>
+        <span style="--dot-color:var(--balance)"></span>
+      </span>
+    </a>
+    <a class="nav-back" href="/#works">← 작업 기록으로</a>
+  </div>
+</nav>
+
+<article>
+  <header class="article-header">
+    <div class="wrap">
+      <div class="article-meta-row">
+        <span class="log-index-tag">LOG_01</span>
+        <span class="phase-tag">ITERATE · 반복</span>
+      </div>
+      <h1 class="article-title">키움 자동매매 스탑 엔진</h1>
+      <p class="article-specline">Kium Auto Mirotic v16.3 · Kiwoom REST/WebSocket API · Python · Tkinter + CustomTkinter · Telegram Bot</p>
+      <p class="article-lead">미국주식 자동매매에서 익절과 손절 타이밍은 사람이 가장 흔들리는 지점입니다. 이 프로그램은 매매 신호를 만들어주지 않습니다 — 대신 정해둔 규칙을 사람보다 빠르고 감정 없이, 실거래 중 마주친 예외상황까지 스스로 복구하며 지켜주는 실행 엔진입니다.</p>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+      <div class="prose">
+
+        <p>키움증권 Open API(REST + WebSocket)로 미국주식 계좌를 감시하다가, 등록해둔 조건(가격)에 도달하면 사람 개입 없이 매도·매수 주문을 직접 전송하는 데스크톱 프로그램입니다. 매매 판단은 여전히 제가 하고, 이 프로그램은 그 판단을 <strong>실행하는 규율</strong>만 담당합니다 — 화면 앞에 없어도, 감정이 흔들려도 등록해둔 규칙은 그대로 지켜집니다.</p>
+
+        <h2><span class="num">01</span>왜 만들었나</h2>
+        <p>프리마켓·애프터마켓 구간에서는 시장가 주문 자체가 불가능합니다. 그래서 이 프로그램의 모든 주문은 발동 시점 현재가에서 일정 비율만큼 벗어난 지정가로 나갑니다 — 익절은 현재가의 −0.5%, 손절은 −1%. 시장가가 아닌데도 사실상 즉시 체결되도록 스스로에게 걸어둔 규칙입니다.</p>
+        <div class="code-block">
+          <pre><span class="c1"># 프리·애프터마켓에서는 시장가가 불가능해 현재가보다 낮은 지정가로 매도</span>
+TAKE_PROFIT_OFFSET = 0.995    <span class="c1"># 익절: 발동 시점 현재가의 -0.5%</span>
+STOP_LOSS_OFFSET   = 0.99     <span class="c1"># 손절: 발동 시점 현재가의 -1%</span></pre>
+        </div>
+
+        <h2><span class="num">02</span>구조 — 두 개의 통로, 하나의 메인 스레드</h2>
+        <p>REST API(토큰 발급·시세조회·잔고조회·주문)와 WebSocket(실시간 체결가 <code>FE</code>, 실시간 주문체결 <code>F5</code>) 두 채널을 함께 씁니다. 특히 <code>F5</code>는 계좌 전체의 체결·주문 이벤트를 종목 등록 여부와 무관하게 흘려보내는데, 그 안에 보유수량이 이미 계산되어 들어 있습니다. 매도 신호가 뜬 순간 보유수량을 다시 조회할 필요가 없다는 뜻이고, 이 설계 하나로 판단과 주문 사이의 지연이 왕복 요청 한 번만큼 줄어듭니다.</p>
+        <p>GUI가 도는 메인 스레드와, 웹소켓·텔레그램·안전망 폴링을 도는 백그라운드 스레드들은 상태를 직접 공유하지 않습니다. 전부 큐(Queue)로만 대화합니다 — 백그라운드는 결과를 큐에 담아 던지기만 하고, 실제 리스트 수정과 화면 갱신은 주기적으로 도는 메인 스레드 폴러가 전담합니다. 스레드 세이프티를 습관이 아니라 구조로 강제한 형태입니다.</p>
+
+        <h2><span class="num">03</span>감시 네 가지</h2>
+        <ul>
+          <li><strong>익절(Take Profit)</strong> — 현재가가 목표가 이상이면 보유수량의 설정 비중만큼 매도.</li>
+          <li><strong>손절(Stop Loss)</strong> — 현재가가 목표가 이하면 매도. 다만 익절보다 다뤄야 할 문제가 하나 더 있습니다 (다음 항목).</li>
+          <li><strong>매수감시(스탑바이)</strong> — 현재가가 목표가 이상으로 오르면 매수. 방향만 반대인 동일한 스탑.</li>
+          <li><strong>트레일링("스탑의 스탑")</strong> — 가격이 도달가 위로 오르면 그 자체로 매매하지 않고, 그 자리에서 새로운 손절감시를 만들어냅니다. 주가가 오르는 만큼 방어선이 자동으로 따라 올라가는 셈입니다.</li>
+        </ul>
+
+        <h2><span class="num">04</span>손절의 진짜 난제 — 이미 깔려있는 매도주문</h2>
+        <p>한 종목에 익절 주문이 이미 미체결로 걸려있는 상태에서 손절 조건까지 뜨면, 실제로 팔 수 있는 "자유 수량"은 보유수량에서 그 미체결분을 뺀 값입니다. <code>recalc_stoploss_plan()</code>은 이걸 조건이 뜨기 전에 미리 계산해두고, 모자라면 <strong>취소 후 재주문(왕복 2번, 그 사이 오버셀 리스크)이 아니라 기존 주문의 가격만 손절가로 정정</strong>하는 쪽을 택합니다. 정정 대상은 가격이 제일 높은(=제일 안 팔릴 것 같은) 주문부터 우선순위를 매겨, 필요한 만큼만 편입합니다.</p>
+        <div class="code-block">
+          <pre>pending_orders = sorted(pending_sell_orders.get(stk_cd, {}).values(),
+                         key=lambda o: o["price"], reverse=True)
+free = max(0, holdings_qty - sum(o["qty"] for o in pending_orders))
+
+<span class="c1"># 자유 수량만으로 충분하면 정정 없이 신규매도만 준비</span>
+<span class="c1"># 부족하면 비싼(=안 팔릴) 주문부터 정정 대상으로 편입해 부족분을 채움</span></pre>
+        </div>
+
+        <h2><span class="num">05</span>실패를 전제로 한 설계</h2>
+        <p>정정 API는 "가장 최근 주문번호"를 알아야 하는데, 정정을 거듭할수록 그 번호는 계속 바뀝니다. 반면 내부 추적은 "최초 주문번호"라는 고정된 식별자로 이어가야 합니다. 이 둘을 <code>stable_key</code>(추적용 고정 식별자)와 <code>ord_no</code>(실제 API 호출에 쓰는 최신 번호)로 분리해서 관리합니다. 실거래로 확인된 레이스 컨디션 — 막 정정된 주문을 아주 짧은 간격으로 또 정정하려 하면 서버가 거부하는 경우 — 이 발생하면, 그 자리에서 서버의 실제 미체결 현황을 다시 받아와 계획을 재수립하고 즉시 재주문합니다. "이번 정정이 실패했다"로 끝나는 게 아니라 "손절 자체가 누락되지 않는다"를 보장하는 게 핵심입니다.</p>
+
+        <h2><span class="num">06</span>이중 안전망</h2>
+        <p>실시간 이벤트가 유실되거나 순서가 꼬일 가능성은 항상 열어둡니다. 30초마다 미체결 매도주문 전체를 서버에서 다시 받아 로컬 장부를 통째로 재동기화하고, 보유수량도 120초 주기로 별도 재확인합니다. 계정이 다른 곳에서 로그인되어 토큰이 무효화되면(키움 API는 동시접속을 허용하지 않습니다) 즉시 감지해서 모달로 알리고, 확인을 누르면 토큰 재발급과 웹소켓 재연결까지 자동으로 시도합니다.</p>
+
+        <h2><span class="num">07</span>원격 제어 — 텔레그램</h2>
+        <p>화면 앞에 계속 붙어있지 않아도 되도록, 감시 등록·삭제·목록조회·로그파일 수신을 텔레그램 명령으로 처리하고, 모든 발동·성공·실패를 텔레그램으로도 알립니다.</p>
+
+        <h2><span class="num">08</span>지금 이 자리</h2>
+        <div class="status-block">
+          <p>버전 16.3. 코드 곳곳의 "[설계원칙 변경]", "실측 확인" 같은 주석들은 실거래에서 관찰한 문제를 다음 버전의 재료로 삼아온 흔적입니다. 정정 실패 패턴을 관찰(Observe)하고, 재시도 전략을 조율(Tune)하고, 다시 실거래에 반영(Iterate)해온 루프 그 자체가 지금 이 문서가 서 있는 FOTIB 순환과 정확히 겹칩니다. 지금은 그 관찰과 조율을 계속 반복하는 단계입니다.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</article>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="wordmark-small">FOTIB</span>
+        <span class="phase-dots footer-dots" aria-hidden="true">
+          <span style="--dot-color:var(--flow)"></span>
+          <span style="--dot-color:var(--observe)"></span>
+          <span style="--dot-color:var(--tune)"></span>
+          <span style="--dot-color:var(--iterate)"></span>
+          <span style="--dot-color:var(--balance)"></span>
+        </span>
+      </div>
+      <p class="footer-tagline">FLOW · OBSERVE · TUNE · ITERATE · BALANCE</p>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 FOTIB LABS</span>
+      <a class="nav-back" href="/">FOTIB 홈으로</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
