@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T오토세이브 — FOTIB Labs</title>
+<meta name="description" content="텔레그램 Bot API로 받은 메세지·사진·동영상·파일을 엑셀과 폴더에 자동 정리하는 개인 기록 프로그램 TAutoSave의 구조와 설계 의도 — FOTIB LOG_03.">
+<meta name="theme-color" content="#0A0D12">
+<link rel="canonical" href="https://fotiblabs.com/works/tautosave.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FOTIB Labs">
+<meta property="og:title" content="T오토세이브">
+<meta property="og:description" content="텔레그램 Bot API로 받은 메세지·사진·동영상·파일을 엑셀과 폴더에 자동 정리하는 개인 기록 프로그램의 구조와 설계 의도.">
+<meta property="og:url" content="https://fotiblabs.com/works/tautosave.html">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0A0D12;
+    --bg-raised:#12161E;
+    --bg-inset:#060809;
+    --line:#232935;
+    --line-soft:#171C25;
+    --text:#ECE9E2;
+    --text-dim:#939AA8;
+    --text-faint:#565D6B;
+    --accent:#E8A659;
+    --accent-wash:rgba(232,166,89,0.12);
+    --flow:#5AA9E6;
+    --observe:#9B7EDE;
+    --tune:#E8A659;
+    --iterate:#E8735A;
+    --balance:#5FBF95;
+    --phase-color:var(--balance);
+    --font-display:'Big Shoulders Display',system-ui,sans-serif;
+    --font-body:'Manrope',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    color-scheme:dark;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:inherit; }
+  p{ margin:0; }
+  ul,ol{ margin:0; padding:0; }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding-inline:clamp(1.25rem,4vw,3rem);
+  }
+
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:0.75rem;
+    font-weight:500;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:sticky;
+    top:0;
+    z-index:40;
+    background:rgba(10,13,18,0.82);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0.85rem clamp(1.25rem,4vw,3rem);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+  }
+  .nav-brand{
+    display:flex;
+    align-items:center;
+    gap:0.7rem;
+    text-decoration:none;
+  }
+  .nav-brand .wordmark-small{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:1.15rem;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .phase-dots{ display:flex; align-items:center; gap:0.3rem; }
+  .phase-dots span{ width:6px;height:6px;border-radius:50%; background:var(--dot-color); display:inline-block; }
+  .nav-back{
+    font-family:var(--font-mono);
+    font-size:0.8rem;
+    letter-spacing:0.02em;
+    text-decoration:none;
+    color:var(--text-dim);
+    display:inline-flex;
+    align-items:center;
+    gap:0.4rem;
+    transition:color .2s ease;
+  }
+  .nav-back:hover,.nav-back:focus-visible{ color:var(--text); }
+
+  /* ---------- article header ---------- */
+  .article-header{
+    padding-block:clamp(2.5rem,6vw,4.5rem) clamp(2rem,4vw,3rem);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .article-meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:0.6rem;
+    margin-bottom:1.1rem;
+  }
+  .phase-tag{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    letter-spacing:0.06em;
+    color:var(--phase-color);
+    border:1px solid var(--phase-color);
+    background:color-mix(in srgb, var(--phase-color) 12%, transparent);
+    padding:0.3rem 0.6rem;
+    border-radius:999px;
+  }
+  .log-index-tag{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+  }
+  h1.article-title{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-weight:800;
+    line-height:0.98;
+    text-wrap:balance;
+    font-size:clamp(2.4rem,6vw,4rem);
+    margin:0 0 1rem;
+  }
+  .article-specline{
+    font-family:var(--font-mono);
+    font-size:0.85rem;
+    color:var(--text-faint);
+    letter-spacing:0.02em;
+    margin-bottom:1.4rem;
+  }
+  .article-lead{
+    font-size:clamp(1.05rem,2vw,1.2rem);
+    color:var(--text-dim);
+    max-width:62ch;
+  }
+
+  /* ---------- article body ---------- */
+  .article-body{
+    padding-block:clamp(2.5rem,6vw,4rem);
+  }
+  .article-body .prose{
+    max-width:68ch;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:1.1rem;
+  }
+  .prose h2{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-weight:800;
+    font-size:clamp(1.4rem,3vw,1.8rem);
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--text);
+    margin-top:1.6rem;
+  }
+  .prose h2 .num{
+    font-family:var(--font-mono);
+    font-weight:500;
+    color:var(--phase-color);
+    font-size:0.6em;
+    letter-spacing:0.1em;
+    display:block;
+    text-transform:uppercase;
+    margin-bottom:0.3rem;
+  }
+  .prose p{
+    color:var(--text-dim);
+    font-size:1.02rem;
+    line-height:1.8;
+  }
+  .prose p strong{ color:var(--text); font-weight:700; }
+  .prose code{
+    font-family:var(--font-mono);
+    font-size:0.88em;
+    color:var(--accent);
+    background:var(--accent-wash);
+    padding:0.1em 0.4em;
+    border-radius:4px;
+  }
+  .code-block{
+    background:var(--bg-inset);
+    border:1px solid var(--line-soft);
+    border-radius:8px;
+    padding:1.1rem 1.3rem;
+    overflow-x:auto;
+    margin-block:0.3rem;
+  }
+  .code-block pre{
+    margin:0;
+    font-family:var(--font-mono);
+    font-size:0.82rem;
+    line-height:1.7;
+    color:var(--text-dim);
+    white-space:pre;
+  }
+  .code-block .c1{ color:var(--text-faint); }
+  .code-caption{
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .prose ul{
+    display:flex;
+    flex-direction:column;
+    gap:0.6rem;
+    padding-left:0;
+  }
+  .prose ul li{
+    list-style:none;
+    color:var(--text-dim);
+    font-size:1.02rem;
+    line-height:1.7;
+    padding-left:1.4rem;
+    position:relative;
+  }
+  .prose ul li::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0.65em;
+    width:6px;height:6px;border-radius:50%;
+    background:var(--phase-color);
+  }
+  .prose ul li strong{ color:var(--text); font-weight:700; }
+  .status-block{
+    border:1px solid var(--line-soft);
+    background:var(--bg-raised);
+    border-radius:10px;
+    padding:1.4rem 1.6rem;
+    margin-top:0.6rem;
+  }
+  .status-block p{ margin:0; }
+  .article-divider{
+    border:none;
+    border-top:1px solid var(--line-soft);
+    margin-block:0.4rem;
+  }
+
+  /* ---------- footer ---------- */
+  .site-footer{
+    border-top:1px solid var(--line-soft);
+    padding-block:2.5rem 3rem;
+  }
+  .footer-top{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:1.5rem;
+    margin-bottom:1.2rem;
+  }
+  .footer-brand{ display:flex; align-items:center; gap:0.8rem; }
+  .footer-brand .wordmark-small{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:1.4rem;
+    text-transform:uppercase;
+  }
+  .footer-dots span{ width:8px;height:8px; }
+  .footer-tagline{
+    font-family:var(--font-mono);
+    font-size:0.78rem;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+  }
+  .footer-bottom{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    gap:1rem;
+    font-family:var(--font-mono);
+    font-size:0.72rem;
+    color:var(--text-faint);
+    padding-top:1.4rem;
+    border-top:1px solid var(--line-soft);
+    margin-top:1.4rem;
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">
+      <span class="wordmark-small">FOTIB</span>
+      <span class="phase-dots" aria-hidden="true">
+        <span style="--dot-color:var(--flow)"></span>
+        <span style="--dot-color:var(--observe)"></span>
+        <span style="--dot-color:var(--tune)"></span>
+        <span style="--dot-color:var(--iterate)"></span>
+        <span style="--dot-color:var(--balance)"></span>
+      </span>
+    </a>
+    <a class="nav-back" href="/#works">← 작업 기록으로</a>
+  </div>
+</nav>
+
+<article>
+  <header class="article-header">
+    <div class="wrap">
+      <div class="article-meta-row">
+        <span class="log-index-tag">LOG_03</span>
+        <span class="phase-tag">BALANCE · 균형</span>
+      </div>
+      <h1 class="article-title">T오토세이브</h1>
+      <p class="article-specline">TAutoSave v1.1.3 · Telegram Bot API (Long Polling) · openpyxl · CustomTkinter</p>
+      <p class="article-lead">텔레그램으로 보낸 순간의 기록이 흩어지지 않도록, 텍스트는 엑셀에 날짜별로, 사진·동영상·파일은 폴더별로 자동 정리합니다. 꺼져 있던 동안의 메세지도, 저장에 실패한 메세지도 하나 잃어버리지 않는 게 목표입니다.</p>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+      <div class="prose">
+
+        <p>텔레그램 봇으로 보내는 텍스트·사진·동영상·파일을 실시간으로 감지해, 텍스트는 엑셀 파일에, 나머지는 종류별 폴더에 자동으로 정리해주는 개인용 기록 프로그램입니다. 매매 프로그램(LOG_01)처럼 정교한 복구 로직이 필요한 도구는 아니지만, <strong>메세지를 잃어버리지 않는다</strong>는 같은 원칙을 이 프로그램의 규모에 맞게 적용했습니다.</p>
+
+        <h2><span class="num">01</span>왜 만들었나</h2>
+        <p>텔레그램으로 순간순간 남기는 메모·사진·짧은 영상들이 대화방 안에 흩어져 있으면 나중에 찾기가 어렵습니다. 봇 하나를 만들어 그 채널로 오는 모든 컨텐츠를 종류별로 자동 분류·저장하도록 했습니다 — 텍스트는 월별 엑셀 파일의 날짜별 시트에, 사진·동영상·첨부파일은 각각 날짜별·월별 폴더에.</p>
+
+        <h2><span class="num">02</span>구조 — 오프셋 기반 롱폴링</h2>
+        <p>텔레그램 <code>getUpdates</code>를 오프셋(<code>last_update_id</code>) 기반 롱폴링(<code>poll_timeout=10</code>초)으로 반복 호출합니다. 처리한 <code>update_id</code>는 즉시 로컬에 저장해두기 때문에, 프로그램을 껐다 켜도 이미 처리한 메세지를 중복 저장하지 않습니다. 재생(▶) 버튼을 누르는 순간 먼저 저장된 오프셋 이후로 밀린 메세지가 있는지 확인하고, 있으면 "반영하시겠습니까?"라고 물어본 뒤(자동 반영 설정 시 묻지 않음) 한꺼번에 처리합니다.</p>
+
+        <h2><span class="num">03</span>메세지 한 건, 최대 네 갈래</h2>
+        <p>update 한 건은 텍스트·사진·동영상·문서로 나눠 처리됩니다. 사진·동영상·첨부파일에 캡션이 달려있으면 그 캡션은 텍스트 쪽 엑셀에도 함께 기록됩니다. 텔레그램 봇 API가 내려받을 수 있는 파일 크기는 최대 약 20MB라, 이를 넘는 동영상·첨부파일은 다운로드를 시도하지 않고 봇이 "허용된 용량을 초과한 파일입니다."라고 바로 답장하며 로그에도 남깁니다.</p>
+
+        <h2><span class="num">04</span>잠긴 엑셀 파일 문제 — 메세지를 잃지 않는 것</h2>
+        <p>사용자가 엑셀 파일을 직접 열어보고 있으면 그 순간 파일이 잠겨 저장이 실패합니다 — 동시에 같은 파일을 고칠 수 없는 자연스러운 충돌입니다. 이전 버전(1.0.0)에서는 이때 실패한 메세지가 "처리 완료"로 표시되어 그대로 유실되는 버그가 있었습니다. 1.0.1부터는 저장에 실패하면 그 메세지를 대기열에 남겨두고, 폴링 루프가 돌 때마다 반복해서 재시도합니다 — 파일을 닫는 순간 자동으로 마저 반영됩니다.</p>
+        <div class="code-block">
+          <pre><span class="c1"># 저장 실패 시 메세지를 버리지 않고 대기열에 적재</span>
+def append_text_row(base_path, dt, text):
+    try:
+        _write_row(base_path, dt, text)
+        return True
+    except Exception:
+        _enqueue_pending(base_path, dt, text)   <span class="c1"># pending.json 에 보관</span>
+        return False
+
+<span class="c1"># 폴링 루프가 돌 때마다 대기열을 다시 반영 시도 (flush_pending)</span></pre>
+        </div>
+
+        <h2><span class="num">05</span>파일명 충돌과 저장 규칙</h2>
+        <p>이미지·동영상·첨부파일은 "년월일시분" 형식 파일명으로 저장하고(예: <code>2608221530.jpg</code>), 같은 분에 여러 개가 오면 <code>_2</code>, <code>_3</code> 번호를 붙여 겹치지 않게 합니다. 엑셀은 새 날짜 시트가 생길 때마다 맨 앞(왼쪽) 탭에 끼워 넣어서, 최근 날짜가 계속 뒤로 밀리지 않고 항상 먼저 보이도록 했습니다.</p>
+
+        <h2><span class="num">06</span>그 외 안전장치</h2>
+        <ul>
+          <li><strong>시작 알림</strong> — 재생 버튼으로 실시간 자동저장이 실제로 시작되면 텔레그램으로도 알려줍니다.</li>
+          <li><strong>자동 실행</strong> — 시스템 시작 시 프로그램이 자동으로 켜지도록 등록할 수 있습니다.</li>
+          <li><strong>바로가기</strong> — 활동 로그 옆 "저장 폴더 열기" 버튼으로 저장 위치를 바로 탐색기에서 확인합니다.</li>
+        </ul>
+
+        <h2><span class="num">07</span>지금 이 자리</h2>
+        <div class="status-block">
+          <p>버전 1.1.3. 1.0.0부터 릴리즈 노트에 남은 건 전부 실제로 쓰다가 걸린 문제들(엑셀 잠금, 파일명 밀림, 용량 초과)을 하나씩 관찰해서 고친 기록입니다. 지금은 특별히 손댈 일 없이 매일 조용히 돌아가는, 여러 반복 끝에 도달한 균형(Balance) 단계입니다.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</article>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="wordmark-small">FOTIB</span>
+        <span class="phase-dots footer-dots" aria-hidden="true">
+          <span style="--dot-color:var(--flow)"></span>
+          <span style="--dot-color:var(--observe)"></span>
+          <span style="--dot-color:var(--tune)"></span>
+          <span style="--dot-color:var(--iterate)"></span>
+          <span style="--dot-color:var(--balance)"></span>
+        </span>
+      </div>
+      <p class="footer-tagline">FLOW · OBSERVE · TUNE · ITERATE · BALANCE</p>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 FOTIB LABS</span>
+      <a class="nav-back" href="/">FOTIB 홈으로</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
