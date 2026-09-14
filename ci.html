@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CI — FOTIB Labs</title>
+<meta name="description" content="FOTIB의 심벌마크·로고타입 구성과 컬러 시스템 — 나이테처럼 쌓이는 다섯 겹의 궤도로 그린 순환과 성장의 심벌.">
+<meta name="theme-color" content="#0A0D12">
+<link rel="canonical" href="https://fotiblabs.com/ci.html">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FOTIB Labs">
+<meta property="og:title" content="CI — FOTIB Labs">
+<meta property="og:description" content="FOTIB의 심벌마크·로고타입 구성과 컬러 시스템.">
+<meta property="og:url" content="https://fotiblabs.com/ci.html">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0A0D12;
+    --bg-raised:#12161E;
+    --bg-inset:#060809;
+    --line:#232935;
+    --line-soft:#171C25;
+    --text:#ECE9E2;
+    --text-dim:#939AA8;
+    --text-faint:#565D6B;
+    --accent:#E8A659;
+    --accent-wash:rgba(232,166,89,0.12);
+    --flow:#5AA9E6;
+    --observe:#9B7EDE;
+    --tune:#E8A659;
+    --iterate:#E8735A;
+    --balance:#5FBF95;
+    --phase-color:var(--accent);
+    --font-display:'Big Shoulders Display',system-ui,sans-serif;
+    --font-body:'Manrope',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+    color-scheme:dark;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:inherit; }
+  p{ margin:0; }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding-inline:clamp(1.25rem,4vw,3rem);
+  }
+
+  /* ---------- nav (same pattern as the rest of the site) ---------- */
+  .nav{
+    position:sticky; top:0; z-index:40;
+    background:rgba(10,13,18,0.82);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .nav-inner{
+    max-width:1180px; margin:0 auto;
+    padding:0.85rem clamp(1.25rem,4vw,3rem);
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  }
+  .nav-brand{ display:flex; align-items:center; gap:0.7rem; text-decoration:none; }
+  .nav-mark-wrap{ display:flex; align-items:center; gap:0.32rem; }
+  .nav-mark-icon{ width:1.3rem; height:1.3rem; display:block; flex:none; }
+  .nav-brand .wordmark-small{
+    font-family:var(--font-display); font-weight:800; font-size:1.15rem;
+    letter-spacing:0.04em; text-transform:uppercase;
+  }
+  .phase-dots{ display:flex; align-items:center; gap:0.3rem; }
+  .phase-dots span{ width:6px;height:6px;border-radius:50%; background:var(--dot-color); display:inline-block; }
+  .nav-back{
+    font-family:var(--font-mono); font-size:0.8rem; letter-spacing:0.02em;
+    text-decoration:none; color:var(--text-dim);
+    display:inline-flex; align-items:center; gap:0.4rem; transition:color .2s ease;
+  }
+  .nav-back:hover,.nav-back:focus-visible{ color:var(--text); }
+
+  /* ---------- article header ---------- */
+  .article-header{
+    padding-block:clamp(2.5rem,6vw,4.5rem) clamp(2rem,4vw,3rem);
+    border-bottom:1px solid var(--line-soft);
+  }
+  .eyebrow{
+    font-family:var(--font-mono); font-size:0.75rem; font-weight:500;
+    letter-spacing:0.18em; text-transform:uppercase; color:var(--accent);
+    margin-bottom:1rem;
+  }
+  h1.article-title{
+    font-family:var(--font-display); text-transform:uppercase; font-weight:800;
+    line-height:0.98; text-wrap:balance;
+    font-size:clamp(2.4rem,6vw,4rem); margin:0 0 1rem;
+  }
+  .article-lead{ font-size:clamp(1.05rem,2vw,1.2rem); color:var(--text-dim); max-width:62ch; }
+
+  /* ---------- article body ---------- */
+  .article-body{ padding-block:clamp(2.5rem,6vw,4rem); }
+  .article-body .prose{ max-width:68ch; margin:0 auto; display:flex; flex-direction:column; gap:1.1rem; }
+  .prose h2{
+    font-family:var(--font-display); text-transform:uppercase; font-weight:800;
+    font-size:clamp(1.4rem,3vw,1.8rem); letter-spacing:0.01em; text-wrap:balance;
+    color:var(--text); margin-top:1.6rem;
+  }
+  .prose p{ color:var(--text-dim); font-size:1.02rem; line-height:1.8; }
+  .prose p strong{ color:var(--text); font-weight:700; }
+  .article-divider{ border:none; border-top:1px solid var(--line-soft); margin-block:1rem; }
+
+  /* ---------- LOGO 구성도 ---------- */
+  .ci-diagram{ margin:0.5rem 0 2.6rem; }
+  .diagram-root{
+    display:flex; justify-content:center;
+  }
+  .diagram-root span{
+    font-family:var(--font-mono); font-size:0.8rem; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--text-dim); border:1px solid var(--line); border-radius:8px; padding:0.5rem 1.3rem;
+  }
+  .diagram-lines{ position:relative; height:34px; max-width:320px; margin:0 auto; }
+  .diagram-lines i{ position:absolute; background:var(--line-soft); display:block; font-style:normal; }
+  .diagram-lines .ln-root{ top:0; left:50%; width:1px; height:16px; transform:translateX(-50%); }
+  .diagram-lines .ln-h{ top:16px; left:25%; right:25%; height:1px; }
+  .diagram-lines .ln-left{ top:16px; left:25%; width:1px; height:18px; }
+  .diagram-lines .ln-right{ top:16px; right:25%; width:1px; height:18px; }
+  .diagram-branches{
+    display:flex; justify-content:space-between; max-width:320px; margin:0 auto;
+    font-family:var(--font-mono); font-size:0.78rem; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--text-faint);
+  }
+  .ci-lockup{
+    margin-top:2.4rem;
+    background:var(--bg); border:1px solid var(--line-soft); border-radius:14px;
+    padding:clamp(2.2rem,6vw,3.4rem) 1.5rem;
+    display:flex; align-items:center; justify-content:center; gap:1.1rem;
+  }
+  .ci-lockup svg{ width:clamp(52px,9vw,72px); height:clamp(52px,9vw,72px); display:block; flex:none; }
+  .ci-lockup .wordmark{
+    font-family:var(--font-display); font-weight:900; text-transform:uppercase;
+    letter-spacing:0.02em; font-size:clamp(2.2rem,7vw,3.4rem); color:var(--text); line-height:1;
+  }
+
+  /* ---------- 컬러시스템 ---------- */
+  .color-grid{
+    display:flex; flex-wrap:wrap; justify-content:center;
+    gap:1.4rem; margin-top:1.6rem;
+  }
+  .color-card{ display:flex; flex-direction:column; align-items:center; text-align:center; flex:0 0 132px; }
+  .color-swatch{
+    width:132px; height:132px; border-radius:50%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.25rem;
+    border:1px solid rgba(255,255,255,0.14);
+    font-family:var(--font-mono); color:#0A0D12;
+  }
+  .color-swatch b{
+    font-family:var(--font-display); font-weight:800; font-size:1.05rem;
+    letter-spacing:0.04em; text-transform:uppercase;
+  }
+  .color-swatch span{ font-size:0.68rem; letter-spacing:0.02em; line-height:1.5; opacity:0.85; }
+
+  /* ---------- footer ---------- */
+  .site-footer{ border-top:1px solid var(--line-soft); padding-block:2.5rem 3rem; }
+  .footer-top{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.5rem; margin-bottom:1.2rem; }
+  .footer-brand{ display:flex; align-items:center; gap:0.8rem; }
+  .footer-brand .wordmark-small{ font-family:var(--font-display); font-weight:800; font-size:1.4rem; text-transform:uppercase; }
+  .footer-dots span{ width:8px;height:8px; }
+  .footer-tagline{ font-family:var(--font-mono); font-size:0.78rem; color:var(--text-faint); letter-spacing:0.04em; }
+  .footer-bottom{
+    display:flex; flex-wrap:wrap; justify-content:space-between; gap:1rem;
+    font-family:var(--font-mono); font-size:0.72rem; color:var(--text-faint);
+    padding-top:1.4rem; border-top:1px solid var(--line-soft); margin-top:1.4rem;
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">
+      <span class="nav-mark-wrap">
+        <svg class="nav-mark-icon" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M50.00,36.00 A14,14 0 1 1 36.00,50.00" fill="none" stroke="#5AA9E6" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M69.02,43.82 A20,20 0 1 1 43.82,30.98" fill="none" stroke="#9B7EDE" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M65.28,71.03 A26,26 0 1 1 71.03,34.72" fill="none" stroke="#E8A659" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M31.19,75.89 A32,32 0 1 1 75.89,68.81" fill="none" stroke="#E8735A" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M13.86,38.26 A38,38 0 1 1 38.26,86.14" fill="none" stroke="#5FBF95" stroke-width="6.5" stroke-linecap="round"/>
+        </svg>
+        <span class="wordmark-small">FOTIB</span>
+      </span>
+      <span class="phase-dots" aria-hidden="true">
+        <span style="--dot-color:var(--flow)"></span>
+        <span style="--dot-color:var(--observe)"></span>
+        <span style="--dot-color:var(--tune)"></span>
+        <span style="--dot-color:var(--iterate)"></span>
+        <span style="--dot-color:var(--balance)"></span>
+      </span>
+    </a>
+    <a class="nav-back" href="/">← 메인으로</a>
+  </div>
+</nav>
+
+<article>
+  <header class="article-header">
+    <div class="wrap">
+      <p class="eyebrow">Identity · CI</p>
+      <h1 class="article-title">CI</h1>
+      <p class="article-lead">FOTIB의 심벌마크와 로고타입이 어떻게 구성되고, 어떤 뜻을 담고 있는지 정리한 페이지입니다.</p>
+    </div>
+  </header>
+
+  <div class="article-body">
+    <div class="wrap">
+      <div class="prose">
+
+        <div class="ci-diagram">
+          <div class="diagram-root"><span>LOGO</span></div>
+          <div class="diagram-lines"><i class="ln-root"></i><i class="ln-h"></i><i class="ln-left"></i><i class="ln-right"></i></div>
+          <div class="diagram-branches"><span>심벌마크</span><span>로고타입</span></div>
+
+          <div class="ci-lockup">
+            <svg viewBox="0 0 100 100" aria-hidden="true">
+              <path d="M50.00,36.00 A14,14 0 1 1 36.00,50.00" fill="none" stroke="#5AA9E6" stroke-width="6.5" stroke-linecap="round"/>
+              <path d="M69.02,43.82 A20,20 0 1 1 43.82,30.98" fill="none" stroke="#9B7EDE" stroke-width="6.5" stroke-linecap="round"/>
+              <path d="M65.28,71.03 A26,26 0 1 1 71.03,34.72" fill="none" stroke="#E8A659" stroke-width="6.5" stroke-linecap="round"/>
+              <path d="M31.19,75.89 A32,32 0 1 1 75.89,68.81" fill="none" stroke="#E8735A" stroke-width="6.5" stroke-linecap="round"/>
+              <path d="M13.86,38.26 A38,38 0 1 1 38.26,86.14" fill="none" stroke="#5FBF95" stroke-width="6.5" stroke-linecap="round"/>
+            </svg>
+            <span class="wordmark">FOTIB</span>
+          </div>
+        </div>
+
+        <h2>심벌마크의 의미</h2>
+        <p>나무의 나이테는 계절이 한 바퀴 돌 때마다 한 겹씩 쌓여 만들어집니다. FOTIB의 심벌마크는 이 원리를 그대로 가져와, <strong>Flow · Observe · Tune · Iterate · Balance</strong> 다섯 단계를 지날 때마다 하나씩 두꺼워지는 다섯 겹의 궤도로 그렸습니다. 안쪽 파란 궤도(Flow)에서 시작해 보라(Observe)·주황(Tune)·빨강(Iterate)을 지나 가장 바깥 초록(Balance)에 이르기까지, 각 궤도의 이음매는 나이테처럼 조금씩 다른 자리에서 시작합니다 — 매번 같은 자리로 돌아오는 반복이 아니라, 조금씩 자리를 바꾸며 쌓이는 순환이라는 뜻입니다. <strong>완성이 아니라 순환으로 성장한다</strong>는 FOTIB의 철학을, 다섯 단계를 하나도 빼지 않고 하나의 도형에 담았습니다. 이 심벌마크는 브라우저 탭 아이콘(파비콘)과 사이트 상단 로고에 쓰입니다.</p>
+
+        <hr class="article-divider">
+
+        <h2>컬러시스템</h2>
+        <p>심벌마크에 쓰인 다섯 가지 색은 FOTIB의 다섯 단계(Flow–Observe–Tune–Iterate–Balance) 순환색 전부이며, 사이트 전반의 태그·다이어그램에도 동일하게 재사용됩니다.</p>
+
+        <div class="color-grid">
+          <div class="color-card">
+            <div class="color-swatch" style="background:#5AA9E6">
+              <b>FLOW</b><span>HEX #5AA9E6</span><span>RGB 90 169 230</span>
+            </div>
+          </div>
+          <div class="color-card">
+            <div class="color-swatch" style="background:#9B7EDE">
+              <b>OBSERVE</b><span>HEX #9B7EDE</span><span>RGB 155 126 222</span>
+            </div>
+          </div>
+          <div class="color-card">
+            <div class="color-swatch" style="background:#E8A659">
+              <b>TUNE</b><span>HEX #E8A659</span><span>RGB 232 166 89</span>
+            </div>
+          </div>
+          <div class="color-card">
+            <div class="color-swatch" style="background:#E8735A">
+              <b>ITERATE</b><span>HEX #E8735A</span><span>RGB 232 115 90</span>
+            </div>
+          </div>
+          <div class="color-card">
+            <div class="color-swatch" style="background:#5FBF95">
+              <b>BALANCE</b><span>HEX #5FBF95</span><span>RGB 95 191 149</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</article>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="wordmark-small">FOTIB</span>
+        <span class="phase-dots footer-dots" aria-hidden="true">
+          <span style="--dot-color:var(--flow)"></span>
+          <span style="--dot-color:var(--observe)"></span>
+          <span style="--dot-color:var(--tune)"></span>
+          <span style="--dot-color:var(--iterate)"></span>
+          <span style="--dot-color:var(--balance)"></span>
+        </span>
+      </div>
+      <p class="footer-tagline">FLOW · OBSERVE · TUNE · ITERATE · BALANCE</p>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 FOTIB LABS</span>
+      <a class="nav-back" href="/">FOTIB 홈으로</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
