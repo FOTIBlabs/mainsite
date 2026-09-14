@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#0A0D12">
 <link rel="canonical" href="https://fotiblabs.com/">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FOTIB Labs">
@@ -117,6 +120,17 @@
     align-items:center;
     gap:0.7rem;
     text-decoration:none;
+  }
+  .nav-mark-wrap{
+    display:flex;
+    align-items:center;
+    gap:0.32rem;
+  }
+  .nav-mark-icon{
+    width:1.3rem;
+    height:1.3rem;
+    display:block;
+    flex:none;
   }
   .nav-brand .wordmark-small{
     font-family:var(--font-display);
@@ -623,7 +637,16 @@
 <nav class="nav">
   <div class="nav-inner">
     <a class="nav-brand" href="#top">
-      <span class="wordmark-small">FOTIB</span>
+      <span class="nav-mark-wrap">
+        <svg class="nav-mark-icon" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M50.00,36.00 A14,14 0 1 1 36.00,50.00" fill="none" stroke="#5AA9E6" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M69.02,43.82 A20,20 0 1 1 43.82,30.98" fill="none" stroke="#9B7EDE" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M65.28,71.03 A26,26 0 1 1 71.03,34.72" fill="none" stroke="#E8A659" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M31.19,75.89 A32,32 0 1 1 75.89,68.81" fill="none" stroke="#E8735A" stroke-width="6.5" stroke-linecap="round"/>
+          <path d="M13.86,38.26 A38,38 0 1 1 38.26,86.14" fill="none" stroke="#5FBF95" stroke-width="6.5" stroke-linecap="round"/>
+        </svg>
+        <span class="wordmark-small">FOTIB</span>
+      </span>
       <span class="phase-dots" aria-hidden="true">
         <span style="--dot-color:var(--flow)"></span>
         <span style="--dot-color:var(--observe)"></span>
@@ -636,6 +659,7 @@
       <a href="#philosophy">철학</a>
       <a href="#works">작업 기록</a>
       <a href="#collab">AI 협업 시스템</a>
+      <a href="/ci.html">CI</a>
       <a href="#contact">연락</a>
     </div>
   </div>
