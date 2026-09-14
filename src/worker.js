@@ -5,7 +5,7 @@
 // 나머지 모든 요청을 기존 정적 자산으로 그대로 넘깁니다.
 //
 // 인증: 쓰기(POST/PATCH) 요청은 `Authorization: Bearer <COLLAB_TOKEN>` 헤더가 필요합니다.
-// COLLAB_TOKEN은 코드에 없고 Cloudflare 대시보드의 Worker Secret으로만 존재합니다.
+// COLLAB_TOKEN은 코드에 없고 Cloudflare 대시보드의 Worker Bindings(Secrets Store 또는 plain Secret)로만 존재합니다.
 // 읽기(GET)는 공개 — 사이트 방문자도 진행 상황을 볼 수 있게 (필요하면 나중에 잠글 수 있음).
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
@@ -27,14 +27,30 @@ function json(data, init) {
   });
 }
 
-function isAuthed(request, env) {
+// COLLAB_TOKEN 바인딩은 두 가지 형태로 올 수 있음:
+//  - Secrets Store 바인딩(2026-09-14부터 이 계정에서 쓰는 방식): env.COLLAB_TOKEN이 객체이고
+//    실제 값은 비동기 env.COLLAB_TOKEN.get()으로만 꺼낼 수 있음(문자열이 바로 들어있지 않음).
+//  - 예전 방식의 plain text/Secret 환경변수: env.COLLAB_TOKEN이 바로 문자열.
+// 2026-09-14 ④ 근본 원인: 애초에 COLLAB_TOKEN이 이 Worker의 Bindings에 전혀 연결돼 있지 않았음
+// (Settings→Builds의 "Variables and secrets"는 빌드 파이프라인 전용이라 런타임 env에 안 들어감).
+// 어느 쪽으로 바인딩해도 동작하도록 둘 다 지원.
+async function resolveSecretValue(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.get === "function") {
+    try { return (await v.get()) || ""; } catch (e) { return ""; }
+  }
+  return "";
+}
+
+async function isAuthed(request, env) {
   const auth = request.headers.get("authorization") || "";
   const m = auth.match(/^Bearer\s+(.+)$/i);
   const token = m ? m[1].trim() : "";
   // env.COLLAB_TOKEN 쪽도 trim — Cloudflare 대시보드에 값을 붙여넣을 때
   // 터미널 출력의 개행문자가 같이 복사되는 경우가 흔해서, 저장된 시크릿 끝에
   // 보이지 않는 공백/개행이 남아있으면 아무리 정확히 복사해도 영원히 불일치함.
-  const stored = String(env.COLLAB_TOKEN || "").trim();
+  const stored = String(await resolveSecretValue(env.COLLAB_TOKEN)).trim();
   return !!stored && token === stored;
 }
 
@@ -67,7 +83,7 @@ async function handleApi(request, env, url) {
   // 사이트 UI가 토큰을 저장하기 전에 "이 토큰이 맞는지"를 즉시 확인하는 용도.
   if (parts[2] === "whoami") {
     if (request.method !== "GET") return json({ error: "method not allowed" }, { status: 405 });
-    if (!isAuthed(request, env)) return json({ ok: false }, { status: 401 });
+    if (!(await isAuthed(request, env))) return json({ ok: false }, { status: 401 });
     return json({ ok: true });
   }
 
@@ -90,7 +106,7 @@ async function handleApi(request, env, url) {
 
   // POST /api/collab/projects  { id?, name, phase? }
   if (seg.length === 0 && request.method === "POST") {
-    if (!isAuthed(request, env)) return json({ error: "unauthorized" }, { status: 401 });
+    if (!(await isAuthed(request, env))) return json({ error: "unauthorized" }, { status: 401 });
     const body = await readJson(request);
     const name = String(body.name || "").trim();
     if (!name) return json({ error: "name required" }, { status: 400 });
@@ -111,7 +127,7 @@ async function handleApi(request, env, url) {
 
   // PATCH /api/collab/projects/:id  { phase?, status?, current_turn?, name? }
   if (seg.length === 1 && request.method === "PATCH") {
-    if (!isAuthed(request, env)) return json({ error: "unauthorized" }, { status: 401 });
+    if (!(await isAuthed(request, env))) return json({ error: "unauthorized" }, { status: 401 });
     const body = await readJson(request);
     const fields = [];
     const values = [];
@@ -143,7 +159,7 @@ async function handleApi(request, env, url) {
 
   // POST /api/collab/projects/:id/messages  { sender, sender_label?, kind?, content }
   if (seg.length === 2 && seg[1] === "messages" && request.method === "POST") {
-    if (!isAuthed(request, env)) return json({ error: "unauthorized" }, { status: 401 });
+    if (!(await isAuthed(request, env))) return json({ error: "unauthorized" }, { status: 401 });
     const body = await readJson(request);
     const sender = String(body.sender || "").trim();
     const content = String(body.content || "").trim();
