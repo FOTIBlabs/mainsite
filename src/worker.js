@@ -31,7 +31,11 @@ function isAuthed(request, env) {
   const auth = request.headers.get("authorization") || "";
   const m = auth.match(/^Bearer\s+(.+)$/i);
   const token = m ? m[1].trim() : "";
-  return !!env.COLLAB_TOKEN && token === env.COLLAB_TOKEN;
+  // env.COLLAB_TOKEN 쪽도 trim — Cloudflare 대시보드에 값을 붙여넣을 때
+  // 터미널 출력의 개행문자가 같이 복사되는 경우가 흔해서, 저장된 시크릿 끝에
+  // 보이지 않는 공백/개행이 남아있으면 아무리 정확히 복사해도 영원히 불일치함.
+  const stored = String(env.COLLAB_TOKEN || "").trim();
+  return !!stored && token === stored;
 }
 
 function slugify(input) {
