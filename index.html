@@ -433,6 +433,90 @@
   .log-entry.is-ghost{ opacity:0.55; }
   .log-entry.is-ghost .log-title{ font-style:normal; }
 
+  /* ---------- collab ---------- */
+  .collab{ background:var(--bg-inset); }
+  .collab-shell{
+    display:grid;
+    grid-template-columns:15rem 1fr;
+    border:1px solid var(--line-soft);
+    border-radius:6px;
+    overflow:hidden;
+    background:var(--bg-raised);
+  }
+  @media (max-width:760px){ .collab-shell{ grid-template-columns:1fr; } }
+
+  .collab-rooms{
+    border-right:1px solid var(--line-soft);
+    padding:0.5rem;
+    max-height:520px;
+    overflow-y:auto;
+    display:flex; flex-direction:column; gap:0.3rem;
+  }
+  @media (max-width:760px){
+    .collab-rooms{ border-right:none; border-bottom:1px solid var(--line-soft); max-height:220px; }
+  }
+  .collab-room-btn{
+    display:block; width:100%; text-align:left;
+    background:transparent; border:1px solid transparent; border-radius:4px;
+    padding:0.65rem 0.75rem; cursor:pointer; color:var(--text);
+    font-family:var(--font-body);
+  }
+  .collab-room-btn:hover{ border-color:var(--line); }
+  .collab-room-btn.is-active{ background:var(--accent-wash); border-color:var(--accent); }
+  .collab-room-name{ font-weight:700; font-size:0.92rem; display:block; margin-bottom:0.3rem; }
+  .collab-room-meta{
+    display:flex; align-items:center; gap:0.4rem;
+    font-family:var(--font-mono); font-size:0.68rem; color:var(--text-faint);
+    text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .collab-phase-dot{ width:7px;height:7px;border-radius:50%; background:var(--phase-color); display:inline-block; flex-shrink:0; }
+  .collab-room-preview{
+    display:block; font-size:0.78rem; color:var(--text-dim); margin-top:0.35rem;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+
+  .collab-room{ display:flex; flex-direction:column; min-height:420px; }
+  .collab-room-head{
+    display:flex; align-items:center; justify-content:space-between; gap:1rem;
+    padding:0.9rem 1.1rem; border-bottom:1px solid var(--line-soft);
+    font-family:var(--font-mono); font-size:0.8rem; color:var(--text-dim);
+  }
+  .collab-room-title{ color:var(--text); font-weight:600; }
+  .collab-room-turn{ color:var(--accent); white-space:nowrap; }
+
+  .collab-thread{
+    flex:1; overflow-y:auto; padding:1rem 1.1rem;
+    display:flex; flex-direction:column; gap:0.9rem; max-height:420px;
+  }
+  .collab-empty{ color:var(--text-faint); font-size:0.85rem; font-family:var(--font-mono); }
+
+  .collab-msg{ display:flex; flex-direction:column; gap:0.3rem; max-width:82%; }
+  .collab-msg.from-user{ align-self:flex-end; max-width:92%; }
+  .collab-msg-head{ display:flex; align-items:baseline; gap:0.5rem; font-family:var(--font-mono); font-size:0.72rem; flex-wrap:wrap; }
+  .collab-msg-sender{ font-weight:700; }
+  .collab-msg-time{ color:var(--text-faint); }
+  .collab-msg-kind{ padding:0.1rem 0.45rem; border-radius:999px; border:1px solid currentColor; font-size:0.62rem; letter-spacing:0.03em; }
+  .collab-msg-body{
+    background:var(--bg-inset); border:1px solid var(--line-soft); border-radius:6px;
+    padding:0.65rem 0.85rem; font-size:0.9rem; color:var(--text); white-space:pre-wrap; line-height:1.55;
+  }
+  .collab-msg.from-user .collab-msg-body{ background:var(--accent-wash); border-color:var(--accent-dim); }
+
+  .collab-compose{ display:flex; flex-direction:column; gap:0.5rem; padding:0.9rem 1.1rem; border-top:1px solid var(--line-soft); }
+  .collab-input{
+    background:var(--bg-inset); border:1px solid var(--line); border-radius:4px; color:var(--text);
+    padding:0.55rem 0.7rem; font-family:var(--font-body); font-size:0.9rem; resize:vertical;
+    width:100%;
+  }
+  .collab-input:focus{ outline:none; border-color:var(--accent); }
+  .collab-input-sm{ max-width:14rem; }
+  .collab-send{ align-self:flex-end; }
+  .collab-unlock{
+    background:transparent; border:none; color:var(--text-faint); font-family:var(--font-mono);
+    font-size:0.72rem; text-align:right; padding:0.55rem 1.1rem; cursor:pointer; width:100%;
+  }
+  .collab-unlock:hover{ color:var(--text-dim); }
+
   /* ---------- footer ---------- */
   .site-footer{
     border-top:1px solid var(--line-soft);
@@ -500,6 +584,7 @@
     <div class="nav-links">
       <a href="#philosophy">철학</a>
       <a href="#works">작업 기록</a>
+      <a href="#collab">AI 협업 시스템</a>
       <a href="#contact">연락</a>
     </div>
   </div>
@@ -701,6 +786,38 @@
       </div>
     </div>
   </section>
+
+  <section class="collab" id="collab">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">AI COLLAB LOG</p>
+        <h2>AI 협업 시스템</h2>
+        <p class="lead">여러 AI 에이전트가 프로젝트별로 나뉜 방에서 메시지를 남기며 작업을 진행합니다. 각 방은 지금 어떤 루프 단계에 있는지 태그로 표시되고, 오가는 대화는 실시간으로 갱신됩니다.</p>
+      </div>
+
+      <div class="collab-shell" id="collabShell">
+        <aside class="collab-rooms" id="collabRooms">
+          <p class="collab-empty">불러오는 중…</p>
+        </aside>
+
+        <div class="collab-room">
+          <div class="collab-room-head">
+            <span class="collab-room-title" id="collabRoomTitle">프로젝트를 선택하세요</span>
+            <span class="collab-room-turn" id="collabRoomTurn"></span>
+          </div>
+          <div class="collab-thread" id="collabThread">
+            <p class="collab-empty">왼쪽에서 방을 선택하면 대화가 여기 표시됩니다.</p>
+          </div>
+          <div class="collab-compose" id="collabCompose" hidden>
+            <input type="text" id="collabSender" class="collab-input collab-input-sm" placeholder="이름 (예: Lee)">
+            <textarea id="collabContent" class="collab-input" rows="2" placeholder="메시지 입력…"></textarea>
+            <button class="btn btn-primary collab-send" id="collabSendBtn" type="button">보내기</button>
+          </div>
+          <button class="collab-unlock" id="collabUnlock" type="button">✎ 직접 입력하려면 토큰 입력</button>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer class="site-footer" id="contact">
@@ -742,6 +859,176 @@
       i = (i+1) % words.length;
       setActive(i);
     }, 2200);
+  })();
+</script>
+
+<script>
+  (function(){
+    var API = '/api/collab';
+    var TOKEN_KEY = 'fotib_collab_token';
+
+    var roomsEl = document.getElementById('collabRooms');
+    var threadEl = document.getElementById('collabThread');
+    var titleEl = document.getElementById('collabRoomTitle');
+    var turnEl = document.getElementById('collabRoomTurn');
+    var composeEl = document.getElementById('collabCompose');
+    var unlockBtn = document.getElementById('collabUnlock');
+    var senderInput = document.getElementById('collabSender');
+    var contentInput = document.getElementById('collabContent');
+    var sendBtn = document.getElementById('collabSendBtn');
+    if(!roomsEl) return;
+
+    var PHASE_COLORS = { flow:'var(--flow)', observe:'var(--observe)', tune:'var(--tune)', iterate:'var(--iterate)', balance:'var(--balance)' };
+    var PHASE_LIST = Object.keys(PHASE_COLORS);
+    var projectsCache = [];
+    var activeProject = null;
+    var lastMsgId = 0;
+    var pollTimer = null;
+
+    function hashColor(str){
+      var h = 0;
+      for(var i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) % 997; }
+      return PHASE_COLORS[PHASE_LIST[Math.abs(h) % PHASE_LIST.length]];
+    }
+
+    function fmtTime(iso){
+      try{
+        var d = new Date(iso + (iso.indexOf('Z')===-1 && iso.indexOf('+')===-1 ? 'Z' : ''));
+        return d.toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+      }catch(e){ return iso; }
+    }
+
+    function esc(s){
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+        return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+      });
+    }
+
+    function renderRooms(){
+      if(!projectsCache.length){
+        roomsEl.innerHTML = '<p class="collab-empty">아직 등록된 프로젝트가 없습니다.</p>';
+        return;
+      }
+      roomsEl.innerHTML = projectsCache.map(function(p){
+        var color = PHASE_COLORS[p.phase] || 'var(--flow)';
+        var preview = p.last_message ? esc(p.last_message).slice(0,60) : '아직 메시지 없음';
+        return '<button class="collab-room-btn' + (p.id===activeProject ? ' is-active' : '') + '" data-id="' + esc(p.id) + '">' +
+          '<span class="collab-room-name">' + esc(p.name) + '</span>' +
+          '<span class="collab-room-meta"><span class="collab-phase-dot" style="--phase-color:' + color + '"></span>' + esc((p.phase||'flow').toUpperCase()) + ' · ' + esc(p.status||'active') + '</span>' +
+          '<span class="collab-room-preview">' + preview + '</span>' +
+          '</button>';
+      }).join('');
+    }
+
+    function appendMessages(list){
+      if(!list.length) return;
+      if(threadEl.querySelector('.collab-empty')) threadEl.innerHTML = '';
+      list.forEach(function(m){
+        var isUser = m.sender === 'user';
+        var color = isUser ? 'var(--accent)' : hashColor(m.sender);
+        var div = document.createElement('div');
+        div.className = 'collab-msg' + (isUser ? ' from-user' : '');
+        var kindBadge = (m.kind && m.kind !== 'message') ? '<span class="collab-msg-kind" style="color:' + color + '">' + esc(m.kind) + '</span>' : '';
+        var head = document.createElement('div');
+        head.className = 'collab-msg-head';
+        head.innerHTML = '<span class="collab-msg-sender" style="color:' + color + '">' + esc(m.sender_label || m.sender) + '</span>' + kindBadge + '<span class="collab-msg-time">' + fmtTime(m.created_at) + '</span>';
+        var body = document.createElement('div');
+        body.className = 'collab-msg-body';
+        body.textContent = m.content;
+        div.appendChild(head);
+        div.appendChild(body);
+        threadEl.appendChild(div);
+        lastMsgId = Math.max(lastMsgId, m.id);
+      });
+      threadEl.scrollTop = threadEl.scrollHeight;
+    }
+
+    function loadRooms(){
+      fetch(API + '/projects').then(function(r){ return r.json(); }).then(function(data){
+        projectsCache = data.projects || [];
+        renderRooms();
+        if(activeProject){
+          var cur = projectsCache.find(function(p){ return p.id === activeProject; });
+          if(cur) turnEl.textContent = cur.current_turn ? ('지금 차례 · ' + cur.current_turn) : '';
+        }
+      }).catch(function(){
+        roomsEl.innerHTML = '<p class="collab-empty">연결 준비 중입니다.</p>';
+      });
+    }
+
+    function selectProject(id){
+      var p = projectsCache.find(function(x){ return x.id === id; });
+      activeProject = id;
+      lastMsgId = 0;
+      titleEl.textContent = (p && p.name) || id;
+      turnEl.textContent = (p && p.current_turn) ? ('지금 차례 · ' + p.current_turn) : '';
+      threadEl.innerHTML = '<p class="collab-empty">불러오는 중…</p>';
+      renderRooms();
+      loadMessages();
+      resetPoll();
+    }
+
+    function loadMessages(){
+      if(!activeProject) return;
+      fetch(API + '/projects/' + encodeURIComponent(activeProject) + '/messages?after=' + lastMsgId)
+        .then(function(r){ return r.json(); })
+        .then(function(data){ appendMessages(data.messages || []); })
+        .catch(function(){});
+    }
+
+    function resetPoll(){
+      if(pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(loadMessages, 4000);
+    }
+
+    roomsEl.addEventListener('click', function(e){
+      var btn = e.target.closest('.collab-room-btn');
+      if(!btn) return;
+      selectProject(btn.getAttribute('data-id'));
+    });
+
+    unlockBtn.addEventListener('click', function(){
+      var existing = null;
+      try{ existing = localStorage.getItem(TOKEN_KEY); }catch(e){}
+      if(existing){
+        composeEl.hidden = !composeEl.hidden;
+        return;
+      }
+      var token = window.prompt('관리자 토큰을 입력하세요');
+      if(!token) return;
+      try{ localStorage.setItem(TOKEN_KEY, token); }catch(e){}
+      composeEl.hidden = false;
+    });
+
+    sendBtn.addEventListener('click', function(){
+      if(!activeProject) return;
+      var content = contentInput.value.trim();
+      if(!content) return;
+      var label = senderInput.value.trim() || 'Lee';
+      var token = null;
+      try{ token = localStorage.getItem(TOKEN_KEY); }catch(e){}
+      sendBtn.disabled = true;
+      fetch(API + '/projects/' + encodeURIComponent(activeProject) + '/messages', {
+        method:'POST',
+        headers:{ 'content-type':'application/json', 'authorization':'Bearer ' + (token || '') },
+        body: JSON.stringify({ sender:'user', sender_label:label, content:content, kind:'command' })
+      }).then(function(r){
+        sendBtn.disabled = false;
+        if(r.status === 401){
+          window.alert('토큰이 올바르지 않습니다.');
+          try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          return;
+        }
+        contentInput.value = '';
+        loadMessages();
+      }).catch(function(){
+        sendBtn.disabled = false;
+        window.alert('전송에 실패했습니다.');
+      });
+    });
+
+    loadRooms();
+    setInterval(loadRooms, 15000);
   })();
 </script>
 </body>

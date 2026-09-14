@@ -1,7 +1,16 @@
 {
   "name": "mainsite",
   "compatibility_date": "2026-09-07",
+  "main": "src/worker.js",
   "assets": {
-    "directory": "./"
-  }
+    "directory": "./",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "COLLAB_DB",
+      "database_name": "fotib-collab",
+      "database_id": "a55ee4c0-e97f-4664-8619-cdec86dc732d"
+    }
+  ]
 }
