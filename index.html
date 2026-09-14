@@ -449,11 +449,25 @@
     border-right:1px solid var(--line-soft);
     padding:0.5rem;
     max-height:520px;
-    overflow-y:auto;
-    display:flex; flex-direction:column; gap:0.3rem;
+    display:flex; flex-direction:column; gap:0.5rem;
   }
   @media (max-width:760px){
-    .collab-rooms{ border-right:none; border-bottom:1px solid var(--line-soft); max-height:220px; }
+    .collab-rooms{ border-right:none; border-bottom:1px solid var(--line-soft); max-height:340px; }
+  }
+  .collab-new-project{ flex-shrink:0; }
+  .collab-new-toggle{
+    width:100%; text-align:left; cursor:pointer;
+    background:transparent; border:1px dashed var(--line); border-radius:4px;
+    padding:0.55rem 0.7rem; color:var(--text-dim);
+    font-family:var(--font-mono); font-size:0.78rem;
+  }
+  .collab-new-toggle:hover{ border-color:var(--accent); color:var(--text); }
+  .collab-new-form{ display:flex; flex-direction:column; gap:0.4rem; margin-top:0.4rem; }
+  select.collab-input{ cursor:pointer; }
+  .collab-room-list{
+    overflow-y:auto;
+    display:flex; flex-direction:column; gap:0.3rem;
+    flex:1;
   }
   .collab-room-btn{
     display:block; width:100%; text-align:left;
@@ -529,6 +543,7 @@
     padding:0 1.1rem 0.7rem; font-family:var(--font-mono); font-size:0.72rem;
     color:var(--iterate); min-height:1em; text-align:right;
   }
+  .collab-new-project .collab-status{ padding:0.3rem 0 0; text-align:left; }
 
   /* ---------- footer ---------- */
   .site-footer{
@@ -809,8 +824,25 @@
       </div>
 
       <div class="collab-shell" id="collabShell">
-        <aside class="collab-rooms" id="collabRooms">
-          <p class="collab-empty">불러오는 중…</p>
+        <aside class="collab-rooms">
+          <div class="collab-new-project">
+            <button class="collab-new-toggle" id="collabNewToggle" type="button">+ 새 프로젝트</button>
+            <div class="collab-new-form" id="collabNewForm" hidden>
+              <input type="text" id="collabNewName" class="collab-input collab-input-sm" placeholder="프로젝트 이름">
+              <select id="collabNewPhase" class="collab-input collab-input-sm">
+                <option value="flow">FLOW · 흐름</option>
+                <option value="observe">OBSERVE · 관찰</option>
+                <option value="tune" selected>TUNE · 조율</option>
+                <option value="iterate">ITERATE · 반복</option>
+                <option value="balance">BALANCE · 균형</option>
+              </select>
+              <button class="btn btn-primary collab-new-create" id="collabNewCreate" type="button">만들기</button>
+            </div>
+            <p class="collab-status" aria-live="polite"></p>
+          </div>
+          <div class="collab-room-list" id="collabRooms">
+            <p class="collab-empty">불러오는 중…</p>
+          </div>
         </aside>
 
         <div class="collab-room">
@@ -902,13 +934,15 @@
     var tokenActions = document.getElementById('collabTokenActions');
     var toggleBtn = document.getElementById('collabToggle');
     var resetTokenBtn = document.getElementById('collabResetToken');
-    var statusEl = document.getElementById('collabStatus');
+    var statusEls = document.querySelectorAll('.collab-status');
     if(!roomsEl) return;
 
     function showStatus(msg){
-      statusEl.textContent = msg || '';
+      statusEls.forEach(function(el){ el.textContent = msg || ''; });
       if(msg){
-        setTimeout(function(){ if(statusEl.textContent === msg) statusEl.textContent = ''; }, 4000);
+        setTimeout(function(){
+          statusEls.forEach(function(el){ if(el.textContent === msg) el.textContent = ''; });
+        }, 4000);
       }
     }
 
@@ -940,7 +974,7 @@
 
     function renderRooms(){
       if(!projectsCache.length){
-        roomsEl.innerHTML = '<p class="collab-empty">아직 등록된 프로젝트가 없습니다.</p>';
+        roomsEl.innerHTML = '<p class="collab-empty">아직 등록된 프로젝트가 없습니다. 위 "+ 새 프로젝트"로 하나 만들어보세요.</p>';
         return;
       }
       roomsEl.innerHTML = projectsCache.map(function(p){
@@ -981,7 +1015,9 @@
       fetch(API + '/projects').then(function(r){ return r.json(); }).then(function(data){
         projectsCache = data.projects || [];
         renderRooms();
-        if(activeProject){
+        if(!activeProject && projectsCache.length){
+          selectProject(projectsCache[0].id);
+        } else if(activeProject){
           var cur = projectsCache.find(function(p){ return p.id === activeProject; });
           if(cur) turnEl.textContent = cur.current_turn ? ('지금 차례 · ' + cur.current_turn) : '';
         }
@@ -1056,12 +1092,61 @@
 
     refreshTokenUI();
 
+    var newToggle = document.getElementById('collabNewToggle');
+    var newForm = document.getElementById('collabNewForm');
+    var newName = document.getElementById('collabNewName');
+    var newPhase = document.getElementById('collabNewPhase');
+    var newCreate = document.getElementById('collabNewCreate');
+
+    newToggle.addEventListener('click', function(){
+      newForm.hidden = !newForm.hidden;
+      if(!newForm.hidden) newName.focus();
+    });
+
+    newName.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); newCreate.click(); }
+    });
+
+    newCreate.addEventListener('click', function(){
+      var name = newName.value.trim();
+      if(!name){ showStatus('프로젝트 이름을 입력하세요.'); return; }
+      var token = getToken();
+      if(!token){ showStatus('먼저 관리자 토큰을 입력하세요.'); return; }
+      newCreate.disabled = true;
+      fetch(API + '/projects', {
+        method:'POST',
+        headers:{ 'content-type':'application/json', 'authorization':'Bearer ' + token },
+        body: JSON.stringify({ name:name, phase:newPhase.value })
+      }).then(function(r){
+        newCreate.disabled = false;
+        if(r.status === 401){
+          try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          refreshTokenUI();
+          showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
+          return null;
+        }
+        if(!r.ok){ showStatus('프로젝트 생성에 실패했습니다.'); return null; }
+        return r.json();
+      }).then(function(data){
+        if(!data) return;
+        newName.value = '';
+        newForm.hidden = true;
+        showStatus('프로젝트를 만들었습니다.');
+        loadRooms();
+        if(data.id) selectProject(data.id);
+      }).catch(function(){
+        newCreate.disabled = false;
+        showStatus('프로젝트 생성에 실패했습니다. 네트워크를 확인해주세요.');
+      });
+    });
+
     sendBtn.addEventListener('click', function(){
-      if(!activeProject) return;
+      if(!activeProject){ showStatus('먼저 프로젝트를 선택하거나 새로 만들어주세요.'); return; }
       var content = contentInput.value.trim();
       if(!content) return;
-      var label = senderInput.value.trim() || 'Lee';
       var token = getToken();
+      if(!token){ showStatus('먼저 관리자 토큰을 입력하세요.'); return; }
+      var label = senderInput.value.trim() || 'Lee';
       sendBtn.disabled = true;
       fetch(API + '/projects/' + encodeURIComponent(activeProject) + '/messages', {
         method:'POST',

@@ -57,7 +57,11 @@ async function handleApi(request, env, url) {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  const seg = url.pathname.split("/").filter(Boolean).slice(2); // ['api','collab', ...] 이후 부분
+  const parts = url.pathname.split("/").filter(Boolean); // ['api','collab','projects', ...]
+  if (parts[2] !== "projects") {
+    return json({ error: "not found" }, { status: 404 });
+  }
+  const seg = parts.slice(3); // 'projects' 다음 부분: [] | [id] | [id,'messages']
 
   // GET /api/collab/projects
   if (seg.length === 0 && request.method === "GET") {
