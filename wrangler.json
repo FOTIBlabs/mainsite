@@ -16,7 +16,7 @@
   "secrets_store_secrets": [
     {
       "binding": "COLLAB_TOKEN",
-      "store_id": "<여기에 Secrets Store의 store_id를 채워넣어주세요>",
+      "store_id": "d232a7b6991149f090edf11096b473a0",
       "secret_name": "api_token"
     }
   ]
