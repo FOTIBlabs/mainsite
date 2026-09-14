@@ -545,19 +545,15 @@
   .collab-input:focus{ outline:none; border-color:var(--accent); }
   .collab-input-sm{ max-width:14rem; }
   .collab-send{ align-self:flex-end; }
-  .collab-unlock{
-    background:transparent; border:none; color:var(--text-faint); font-family:var(--font-mono);
-    font-size:0.72rem; text-align:right; padding:0.3rem 0; cursor:pointer;
-  }
-  .collab-unlock:hover{ color:var(--text-dim); }
   .collab-token-row{
-    display:flex; gap:0.5rem; align-items:center;
+    display:flex; gap:0.6rem; align-items:center;
     padding:0.9rem 1.1rem; border-top:1px solid var(--line-soft);
   }
   .collab-token-row .collab-input{ flex:1; }
-  .collab-token-actions{
-    display:flex; justify-content:flex-end; gap:1rem; flex-wrap:wrap;
-    padding:0 1.1rem 0.7rem;
+  .collab-token-row .collab-input:disabled{ opacity:0.5; cursor:not-allowed; }
+  .collab-token-live{
+    display:inline-flex; align-items:center; gap:0.3rem; white-space:nowrap;
+    font-family:var(--font-mono); font-size:0.72rem; color:var(--balance);
   }
   .collab-status{
     padding:0 1.1rem 0.7rem; font-family:var(--font-mono); font-size:0.72rem;
@@ -847,7 +843,7 @@
 
       <div class="collab-shell" id="collabShell">
         <aside class="collab-rooms">
-          <div class="collab-new-project">
+          <div class="collab-new-project" id="collabNewProject" hidden>
             <button class="collab-new-toggle" id="collabNewToggle" type="button">+ 새 프로젝트</button>
             <div class="collab-new-form" id="collabNewForm" hidden>
               <input type="text" id="collabNewName" class="collab-input collab-input-sm" placeholder="프로젝트 이름">
@@ -882,11 +878,8 @@
           </div>
           <div class="collab-token-row" id="collabTokenRow">
             <input type="password" id="collabTokenInput" class="collab-input collab-input-sm" placeholder="관리자 토큰 입력" autocomplete="off">
+            <span class="collab-token-live" id="collabTokenLive" hidden>● 접속중</span>
             <button class="btn btn-ghost" id="collabTokenBtn" type="button">확인</button>
-          </div>
-          <div class="collab-token-actions" id="collabTokenActions" hidden>
-            <button class="collab-unlock" id="collabToggle" type="button">✎ 직접 입력 열기/닫기</button>
-            <button class="collab-unlock" id="collabResetToken" type="button">✕ 저장된 토큰 지우기</button>
           </div>
           <p class="collab-status" id="collabStatus" aria-live="polite"></p>
         </div>
@@ -953,9 +946,13 @@
     var tokenRow = document.getElementById('collabTokenRow');
     var tokenInput = document.getElementById('collabTokenInput');
     var tokenBtn = document.getElementById('collabTokenBtn');
-    var tokenActions = document.getElementById('collabTokenActions');
-    var toggleBtn = document.getElementById('collabToggle');
-    var resetTokenBtn = document.getElementById('collabResetToken');
+    var tokenLive = document.getElementById('collabTokenLive');
+    var newProjectWrap = document.getElementById('collabNewProject');
+    var newToggle = document.getElementById('collabNewToggle');
+    var newForm = document.getElementById('collabNewForm');
+    var newName = document.getElementById('collabNewName');
+    var newPhase = document.getElementById('collabNewPhase');
+    var newCreate = document.getElementById('collabNewCreate');
     var statusEls = document.querySelectorAll('.collab-status');
     if(!roomsEl) return;
 
@@ -1032,7 +1029,7 @@
         if(isAdmin){
           if(pendingDeleteProject === p.id){
             adminRow = '<div class="collab-room-admin">' +
-              '<button class="collab-mini-btn is-danger" data-action="delete-confirm" data-id="' + esc(p.id) + '">정말 삭제?</button>' +
+              '<button class="collab-mini-btn is-danger" data-action="delete-confirm" data-id="' + esc(p.id) + '">삭제 확인</button>' +
               '<button class="collab-mini-btn" data-action="delete-cancel" data-id="' + esc(p.id) + '">취소</button>' +
             '</div>';
           } else {
@@ -1072,7 +1069,6 @@
       }).then(function(r){
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
-          manualOpen = false;
           refreshAdminControls();
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return;
@@ -1097,7 +1093,6 @@
         pendingDeleteProject = null;
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
-          manualOpen = false;
           refreshAdminControls();
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return;
@@ -1142,7 +1137,7 @@
         adminRow.className = 'collab-msg-admin';
         if(pendingDeleteMsg === m.id){
           adminRow.innerHTML =
-            '<button class="collab-mini-btn is-danger" data-msg-action="delete-confirm" data-id="' + m.id + '">정말 삭제?</button>' +
+            '<button class="collab-mini-btn is-danger" data-msg-action="delete-confirm" data-id="' + m.id + '">삭제 확인</button>' +
             '<button class="collab-mini-btn" data-msg-action="delete-cancel" data-id="' + m.id + '">취소</button>';
         } else {
           var editBtn = isUser ? '<button class="collab-mini-btn" data-msg-action="edit-start" data-id="' + m.id + '" title="수정">✎</button>' : '';
@@ -1200,7 +1195,6 @@
       }).then(function(r){
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
-          manualOpen = false;
           refreshAdminControls();
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return;
@@ -1231,7 +1225,6 @@
         pendingDeleteMsg = null;
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
-          manualOpen = false;
           refreshAdminControls();
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return;
@@ -1348,19 +1341,22 @@
       if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); if(id) submitEditMessage(id); }
     });
 
-    var manualOpen = false; // "직접 입력 열기/닫기"로 토큰 입력창을 강제로 펼쳐둔 상태인지
-
     function getToken(){
       try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; }
     }
 
-    // 토큰 관련 UI는 이 함수 하나로만 그린다 — has(저장 여부) / manualOpen(강제로 펼침) 두 상태의 조합으로
-    // tokenRow(입력창) · tokenActions(토글·지우기 버튼) · composeEl(메시지 작성창) 가시성을 결정.
+    // 토큰 관련 UI는 이 함수 하나로만 그린다 — has(저장+인증 여부)에 따라
+    // 입력창 비활성화/'접속중' 표시/버튼 라벨(확인↔로그아웃) · composeEl(메시지 작성창) ·
+    // newProjectWrap(+ 새 프로젝트) 가시성을 결정.
     function refreshTokenUI(){
       var has = !!getToken();
-      tokenRow.hidden = has && !manualOpen;
-      tokenActions.hidden = !has;
+      tokenInput.disabled = has;
+      if(has){ tokenInput.value = ''; }
+      tokenLive.hidden = !has;
+      tokenBtn.textContent = has ? '로그아웃' : '확인';
       composeEl.hidden = !has;
+      newProjectWrap.hidden = !has;
+      if(!has){ newForm.hidden = true; }
     }
 
     // 로그인/로그아웃(토큰이 생기거나 사라짐)처럼 "관리자 여부"가 바뀌는 시점에 호출 —
@@ -1379,7 +1375,15 @@
       }
     }
 
+    // 확인/로그아웃 겸용 버튼 — 이미 인증된 상태(has)면 로그아웃, 아니면 토큰 검증 후 저장.
     tokenBtn.addEventListener('click', function(){
+      if(getToken()){
+        try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+        tokenInput.value = '';
+        showStatus('로그아웃되었습니다.', 'ok');
+        refreshAdminControls();
+        return;
+      }
       var v = tokenInput.value.trim();
       if(!v){ showStatus('토큰을 입력해주세요.'); return; }
       tokenBtn.disabled = true;
@@ -1388,20 +1392,19 @@
       fetch(API + '/whoami', { headers: { 'authorization': 'Bearer ' + v } })
         .then(function(r){
           tokenBtn.disabled = false;
-          tokenInput.disabled = false;
           if(r.status === 401){
+            tokenInput.disabled = false;
             showStatus('토큰이 올바르지 않습니다 — 다시 확인해주세요.');
             tokenInput.focus();
             tokenInput.select();
             return;
           }
           if(!r.ok){
+            tokenInput.disabled = false;
             showStatus('확인 중 오류가 발생했습니다 (응답 ' + r.status + '). 잠시 후 다시 시도해주세요.');
             return;
           }
           try{ localStorage.setItem(TOKEN_KEY, v); }catch(e){}
-          tokenInput.value = '';
-          manualOpen = false;
           showStatus('토큰이 확인되었습니다.', 'ok');
           refreshAdminControls();
         })
@@ -1416,36 +1419,7 @@
       if(e.key === 'Enter'){ e.preventDefault(); tokenBtn.click(); }
     });
 
-    // 이미 토큰이 저장돼 있어도, 다른 토큰으로 바꿔 넣고 싶을 때 입력창을 다시 펼치는 버튼.
-    // (과거엔 실수로 메시지 작성창을 여닫는 버튼과 뒤바뀌어 있었음 — 라벨과 동작을 일치시킴)
-    toggleBtn.addEventListener('click', function(){
-      manualOpen = !manualOpen;
-      if(manualOpen){
-        tokenInput.value = '';
-        refreshTokenUI();
-        tokenInput.focus();
-        showStatus('새 토큰을 입력한 뒤 확인을 눌러주세요.', 'pending');
-      } else {
-        refreshTokenUI();
-        showStatus('');
-      }
-    });
-
-    resetTokenBtn.addEventListener('click', function(){
-      var had = !!getToken();
-      try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
-      manualOpen = false;
-      refreshAdminControls();
-      showStatus(had ? '저장된 토큰을 지웠습니다.' : '지울 토큰이 없습니다.', had ? 'ok' : undefined);
-    });
-
     refreshTokenUI();
-
-    var newToggle = document.getElementById('collabNewToggle');
-    var newForm = document.getElementById('collabNewForm');
-    var newName = document.getElementById('collabNewName');
-    var newPhase = document.getElementById('collabNewPhase');
-    var newCreate = document.getElementById('collabNewCreate');
 
     newToggle.addEventListener('click', function(){
       newForm.hidden = !newForm.hidden;
@@ -1470,7 +1444,6 @@
         newCreate.disabled = false;
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
-          manualOpen = false;
           refreshAdminControls();
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return null;
@@ -1506,7 +1479,6 @@
         sendBtn.disabled = false;
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
-          manualOpen = false;
           refreshAdminControls();
           contentInput.value = content; // 입력한 내용은 유지
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
