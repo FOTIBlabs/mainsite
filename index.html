@@ -513,9 +513,22 @@
   .collab-send{ align-self:flex-end; }
   .collab-unlock{
     background:transparent; border:none; color:var(--text-faint); font-family:var(--font-mono);
-    font-size:0.72rem; text-align:right; padding:0.55rem 1.1rem; cursor:pointer; width:100%;
+    font-size:0.72rem; text-align:right; padding:0.3rem 0; cursor:pointer;
   }
   .collab-unlock:hover{ color:var(--text-dim); }
+  .collab-token-row{
+    display:flex; gap:0.5rem; align-items:center;
+    padding:0.9rem 1.1rem; border-top:1px solid var(--line-soft);
+  }
+  .collab-token-row .collab-input{ flex:1; }
+  .collab-token-actions{
+    display:flex; justify-content:flex-end; gap:1rem; flex-wrap:wrap;
+    padding:0 1.1rem 0.7rem;
+  }
+  .collab-status{
+    padding:0 1.1rem 0.7rem; font-family:var(--font-mono); font-size:0.72rem;
+    color:var(--iterate); min-height:1em; text-align:right;
+  }
 
   /* ---------- footer ---------- */
   .site-footer{
@@ -813,7 +826,15 @@
             <textarea id="collabContent" class="collab-input" rows="2" placeholder="메시지 입력…"></textarea>
             <button class="btn btn-primary collab-send" id="collabSendBtn" type="button">보내기</button>
           </div>
-          <button class="collab-unlock" id="collabUnlock" type="button">✎ 직접 입력하려면 토큰 입력</button>
+          <div class="collab-token-row" id="collabTokenRow">
+            <input type="password" id="collabTokenInput" class="collab-input collab-input-sm" placeholder="관리자 토큰 입력" autocomplete="off">
+            <button class="btn btn-ghost" id="collabTokenBtn" type="button">확인</button>
+          </div>
+          <div class="collab-token-actions" id="collabTokenActions" hidden>
+            <button class="collab-unlock" id="collabToggle" type="button">✎ 직접 입력 열기/닫기</button>
+            <button class="collab-unlock" id="collabResetToken" type="button">✕ 저장된 토큰 지우기</button>
+          </div>
+          <p class="collab-status" id="collabStatus" aria-live="polite"></p>
         </div>
       </div>
     </div>
@@ -872,11 +893,24 @@
     var titleEl = document.getElementById('collabRoomTitle');
     var turnEl = document.getElementById('collabRoomTurn');
     var composeEl = document.getElementById('collabCompose');
-    var unlockBtn = document.getElementById('collabUnlock');
     var senderInput = document.getElementById('collabSender');
     var contentInput = document.getElementById('collabContent');
     var sendBtn = document.getElementById('collabSendBtn');
+    var tokenRow = document.getElementById('collabTokenRow');
+    var tokenInput = document.getElementById('collabTokenInput');
+    var tokenBtn = document.getElementById('collabTokenBtn');
+    var tokenActions = document.getElementById('collabTokenActions');
+    var toggleBtn = document.getElementById('collabToggle');
+    var resetTokenBtn = document.getElementById('collabResetToken');
+    var statusEl = document.getElementById('collabStatus');
     if(!roomsEl) return;
+
+    function showStatus(msg){
+      statusEl.textContent = msg || '';
+      if(msg){
+        setTimeout(function(){ if(statusEl.textContent === msg) statusEl.textContent = ''; }, 4000);
+      }
+    }
 
     var PHASE_COLORS = { flow:'var(--flow)', observe:'var(--observe)', tune:'var(--tune)', iterate:'var(--iterate)', balance:'var(--balance)' };
     var PHASE_LIST = Object.keys(PHASE_COLORS);
@@ -987,43 +1021,66 @@
       selectProject(btn.getAttribute('data-id'));
     });
 
-    unlockBtn.addEventListener('click', function(){
-      var existing = null;
-      try{ existing = localStorage.getItem(TOKEN_KEY); }catch(e){}
-      if(existing){
-        composeEl.hidden = !composeEl.hidden;
-        return;
-      }
-      var token = window.prompt('관리자 토큰을 입력하세요');
-      if(!token) return;
-      try{ localStorage.setItem(TOKEN_KEY, token); }catch(e){}
+    function getToken(){
+      try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; }
+    }
+
+    function refreshTokenUI(){
+      var has = !!getToken();
+      tokenRow.hidden = has;
+      tokenActions.hidden = !has;
+      if(!has) composeEl.hidden = true;
+    }
+
+    tokenBtn.addEventListener('click', function(){
+      var v = tokenInput.value.trim();
+      if(!v) return;
+      try{ localStorage.setItem(TOKEN_KEY, v); }catch(e){}
+      tokenInput.value = '';
       composeEl.hidden = false;
+      refreshTokenUI();
     });
+
+    tokenInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); tokenBtn.click(); }
+    });
+
+    toggleBtn.addEventListener('click', function(){
+      composeEl.hidden = !composeEl.hidden;
+    });
+
+    resetTokenBtn.addEventListener('click', function(){
+      try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+      refreshTokenUI();
+    });
+
+    refreshTokenUI();
 
     sendBtn.addEventListener('click', function(){
       if(!activeProject) return;
       var content = contentInput.value.trim();
       if(!content) return;
       var label = senderInput.value.trim() || 'Lee';
-      var token = null;
-      try{ token = localStorage.getItem(TOKEN_KEY); }catch(e){}
+      var token = getToken();
       sendBtn.disabled = true;
       fetch(API + '/projects/' + encodeURIComponent(activeProject) + '/messages', {
         method:'POST',
-        headers:{ 'content-type':'application/json', 'authorization':'Bearer ' + (token || '') },
+        headers:{ 'content-type':'application/json', 'authorization':'Bearer ' + token },
         body: JSON.stringify({ sender:'user', sender_label:label, content:content, kind:'command' })
       }).then(function(r){
         sendBtn.disabled = false;
         if(r.status === 401){
-          window.alert('토큰이 올바르지 않습니다.');
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          refreshTokenUI();
+          contentInput.value = content; // 입력한 내용은 유지
+          showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return;
         }
         contentInput.value = '';
         loadMessages();
       }).catch(function(){
         sendBtn.disabled = false;
-        window.alert('전송에 실패했습니다.');
+        showStatus('전송에 실패했습니다. 잠시 후 다시 시도해주세요.');
       });
     });
 
