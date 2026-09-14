@@ -47,6 +47,10 @@
   *,*::before,*::after{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+  /* hidden 속성을 쓰는 요소는 항상 확실히 숨겨지도록 — 같은 요소에 display를 지정하는
+     클래스 규칙이 있으면 명시도가 같아 나중에 선언된 쪽(작성자 스타일시트)이 이겨서
+     hidden이어도 실제로는 보이는 문제가 생길 수 있음(예: .collab-compose{display:flex}). */
+  [hidden]{ display:none !important; }
 
   body{
     margin:0;
@@ -550,11 +554,12 @@
     padding:0.9rem 1.1rem; border-top:1px solid var(--line-soft);
   }
   .collab-token-row .collab-input{ flex:1; }
-  .collab-token-row .collab-input:disabled{ opacity:0.5; cursor:not-allowed; }
-  .collab-token-live{
-    display:inline-flex; align-items:center; gap:0.3rem; white-space:nowrap;
-    font-family:var(--font-mono); font-size:0.72rem; color:var(--balance);
-  }
+  /* 인증되면 입력칸 자체가 "● 접속중" 표시를 겸함(placeholder로) — 비활성 상태에서도
+     글자가 흐려지지 않도록 opacity는 그대로 1로 두고, 색만 초록으로 바꿔 상태를 구분. */
+  .collab-token-row .collab-input:disabled{ cursor:not-allowed; opacity:1; }
+  .collab-token-row .collab-input.is-live{ border-color:var(--balance); color:var(--balance); }
+  .collab-token-row .collab-input.is-live::placeholder{ color:var(--balance); opacity:1; }
+  .collab-token-row .collab-input::placeholder{ color:var(--text-faint); opacity:1; }
   .collab-status{
     padding:0 1.1rem 0.7rem; font-family:var(--font-mono); font-size:0.72rem;
     color:var(--iterate); min-height:1em; text-align:right;
@@ -878,7 +883,6 @@
           </div>
           <div class="collab-token-row" id="collabTokenRow">
             <input type="password" id="collabTokenInput" class="collab-input collab-input-sm" placeholder="관리자 토큰 입력" autocomplete="off">
-            <span class="collab-token-live" id="collabTokenLive" hidden>● 접속중</span>
             <button class="btn btn-ghost" id="collabTokenBtn" type="button">확인</button>
           </div>
           <p class="collab-status" id="collabStatus" aria-live="polite"></p>
@@ -946,7 +950,6 @@
     var tokenRow = document.getElementById('collabTokenRow');
     var tokenInput = document.getElementById('collabTokenInput');
     var tokenBtn = document.getElementById('collabTokenBtn');
-    var tokenLive = document.getElementById('collabTokenLive');
     var newProjectWrap = document.getElementById('collabNewProject');
     var newToggle = document.getElementById('collabNewToggle');
     var newForm = document.getElementById('collabNewForm');
@@ -1346,13 +1349,14 @@
     }
 
     // 토큰 관련 UI는 이 함수 하나로만 그린다 — has(저장+인증 여부)에 따라
-    // 입력창 비활성화/'접속중' 표시/버튼 라벨(확인↔로그아웃) · composeEl(메시지 작성창) ·
-    // newProjectWrap(+ 새 프로젝트) 가시성을 결정.
+    // 입력창 비활성화/'접속중' 표시(입력칸 placeholder+색으로 표현)/버튼 라벨(확인↔로그아웃) ·
+    // composeEl(메시지 작성창) · newProjectWrap(+ 새 프로젝트) 가시성을 결정.
     function refreshTokenUI(){
       var has = !!getToken();
       tokenInput.disabled = has;
-      if(has){ tokenInput.value = ''; }
-      tokenLive.hidden = !has;
+      tokenInput.value = '';
+      tokenInput.placeholder = has ? '● 접속중' : '관리자 토큰 입력';
+      tokenInput.classList.toggle('is-live', has);
       tokenBtn.textContent = has ? '로그아웃' : '확인';
       composeEl.hidden = !has;
       newProjectWrap.hidden = !has;
