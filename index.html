@@ -543,6 +543,8 @@
     padding:0 1.1rem 0.7rem; font-family:var(--font-mono); font-size:0.72rem;
     color:var(--iterate); min-height:1em; text-align:right;
   }
+  .collab-status.is-ok{ color:var(--balance); }
+  .collab-status.is-pending{ color:var(--text-dim); }
   .collab-new-project .collab-status{ padding:0.3rem 0 0; text-align:left; }
 
   /* ---------- footer ---------- */
@@ -937,11 +939,17 @@
     var statusEls = document.querySelectorAll('.collab-status');
     if(!roomsEl) return;
 
-    function showStatus(msg){
-      statusEls.forEach(function(el){ el.textContent = msg || ''; });
-      if(msg){
+    function showStatus(msg, type){
+      statusEls.forEach(function(el){
+        el.textContent = msg || '';
+        el.classList.remove('is-ok', 'is-pending');
+        if(type === 'ok' || type === 'pending') el.classList.add('is-' + type);
+      });
+      if(msg && type !== 'pending'){
         setTimeout(function(){
-          statusEls.forEach(function(el){ if(el.textContent === msg) el.textContent = ''; });
+          statusEls.forEach(function(el){
+            if(el.textContent === msg){ el.textContent = ''; el.classList.remove('is-ok', 'is-pending'); }
+          });
         }, 4000);
       }
     }
@@ -1057,37 +1065,79 @@
       selectProject(btn.getAttribute('data-id'));
     });
 
+    var manualOpen = false; // "직접 입력 열기/닫기"로 토큰 입력창을 강제로 펼쳐둔 상태인지
+
     function getToken(){
       try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; }
     }
 
+    // 토큰 관련 UI는 이 함수 하나로만 그린다 — has(저장 여부) / manualOpen(강제로 펼침) 두 상태의 조합으로
+    // tokenRow(입력창) · tokenActions(토글·지우기 버튼) · composeEl(메시지 작성창) 가시성을 결정.
     function refreshTokenUI(){
       var has = !!getToken();
-      tokenRow.hidden = has;
+      tokenRow.hidden = has && !manualOpen;
       tokenActions.hidden = !has;
-      if(!has) composeEl.hidden = true;
+      composeEl.hidden = !has;
     }
 
     tokenBtn.addEventListener('click', function(){
       var v = tokenInput.value.trim();
-      if(!v) return;
-      try{ localStorage.setItem(TOKEN_KEY, v); }catch(e){}
-      tokenInput.value = '';
-      composeEl.hidden = false;
-      refreshTokenUI();
+      if(!v){ showStatus('토큰을 입력해주세요.'); return; }
+      tokenBtn.disabled = true;
+      tokenInput.disabled = true;
+      showStatus('토큰 확인 중…', 'pending');
+      fetch(API + '/whoami', { headers: { 'authorization': 'Bearer ' + v } })
+        .then(function(r){
+          tokenBtn.disabled = false;
+          tokenInput.disabled = false;
+          if(r.status === 401){
+            showStatus('토큰이 올바르지 않습니다 — 다시 확인해주세요.');
+            tokenInput.focus();
+            tokenInput.select();
+            return;
+          }
+          if(!r.ok){
+            showStatus('확인 중 오류가 발생했습니다 (응답 ' + r.status + '). 잠시 후 다시 시도해주세요.');
+            return;
+          }
+          try{ localStorage.setItem(TOKEN_KEY, v); }catch(e){}
+          tokenInput.value = '';
+          manualOpen = false;
+          showStatus('토큰이 확인되었습니다.', 'ok');
+          refreshTokenUI();
+        })
+        .catch(function(){
+          tokenBtn.disabled = false;
+          tokenInput.disabled = false;
+          showStatus('네트워크 오류로 확인하지 못했습니다. 연결을 확인하고 다시 시도해주세요.');
+        });
     });
 
     tokenInput.addEventListener('keydown', function(e){
       if(e.key === 'Enter'){ e.preventDefault(); tokenBtn.click(); }
     });
 
+    // 이미 토큰이 저장돼 있어도, 다른 토큰으로 바꿔 넣고 싶을 때 입력창을 다시 펼치는 버튼.
+    // (과거엔 실수로 메시지 작성창을 여닫는 버튼과 뒤바뀌어 있었음 — 라벨과 동작을 일치시킴)
     toggleBtn.addEventListener('click', function(){
-      composeEl.hidden = !composeEl.hidden;
+      manualOpen = !manualOpen;
+      if(manualOpen){
+        tokenInput.value = '';
+        refreshTokenUI();
+        tokenInput.focus();
+        showStatus('새 토큰을 입력한 뒤 확인을 눌러주세요.', 'pending');
+      } else {
+        refreshTokenUI();
+        showStatus('');
+      }
     });
 
     resetTokenBtn.addEventListener('click', function(){
+      var had = !!getToken();
       try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+      manualOpen = false;
       refreshTokenUI();
+      showStatus(had ? '저장된 토큰을 지웠습니다.' : '지울 토큰이 없습니다.', had ? 'ok' : undefined);
     });
 
     refreshTokenUI();
@@ -1121,6 +1171,7 @@
         newCreate.disabled = false;
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          manualOpen = false;
           refreshTokenUI();
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return null;
@@ -1156,6 +1207,7 @@
         sendBtn.disabled = false;
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          manualOpen = false;
           refreshTokenUI();
           contentInput.value = content; // 입력한 내용은 유지
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
