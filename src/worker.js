@@ -62,6 +62,15 @@ async function handleApi(request, env, url) {
   }
 
   const parts = url.pathname.split("/").filter(Boolean); // ['api','collab','projects', ...]
+
+  // GET /api/collab/whoami — 토큰이 유효한지만 확인. DB 접근 없음, 아무 데이터도 바꾸지 않음.
+  // 사이트 UI가 토큰을 저장하기 전에 "이 토큰이 맞는지"를 즉시 확인하는 용도.
+  if (parts[2] === "whoami") {
+    if (request.method !== "GET") return json({ error: "method not allowed" }, { status: 405 });
+    if (!isAuthed(request, env)) return json({ ok: false }, { status: 401 });
+    return json({ ok: true });
+  }
+
   if (parts[2] !== "projects") {
     return json({ error: "not found" }, { status: 404 });
   }
