@@ -489,6 +489,21 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
 
+  /* 관리자 토큰으로 접속했을 때만 보이는 프로젝트 이름 변경/삭제 컨트롤 */
+  .collab-room-item{ display:flex; flex-direction:column; gap:0.25rem; }
+  .collab-room-item.is-editing{
+    padding:0.5rem; border:1px solid var(--line); border-radius:4px; display:flex; flex-direction:column; gap:0.4rem;
+  }
+  .collab-room-admin{ display:flex; gap:0.4rem; padding:0 0.15rem; }
+  .collab-room-rename-input{ max-width:none; width:100%; }
+  .collab-mini-btn{
+    background:transparent; border:1px solid var(--line); border-radius:4px; color:var(--text-faint);
+    font-family:var(--font-mono); font-size:0.68rem; padding:0.2rem 0.5rem; cursor:pointer; line-height:1.4;
+  }
+  .collab-mini-btn:hover{ border-color:var(--accent); color:var(--text); }
+  .collab-mini-btn.is-danger{ color:var(--iterate); border-color:var(--iterate); }
+  .collab-mini-btn.is-danger:hover{ background:var(--iterate); color:var(--bg); }
+
   .collab-room{ display:flex; flex-direction:column; min-height:420px; }
   .collab-room-head{
     display:flex; align-items:center; justify-content:space-between; gap:1rem;
@@ -515,6 +530,11 @@
     padding:0.65rem 0.85rem; font-size:0.9rem; color:var(--text); white-space:pre-wrap; line-height:1.55;
   }
   .collab-msg.from-user .collab-msg-body{ background:var(--accent-wash); border-color:var(--accent-dim); }
+
+  /* 관리자 토큰으로 접속했을 때만 보이는 메시지 수정/삭제 컨트롤 — 수정은 관리자(user)가 보낸 메시지에만 표시 */
+  .collab-msg-admin{ display:flex; gap:0.35rem; margin-left:auto; }
+  .collab-msg-edit{ display:flex; flex-direction:column; gap:0.4rem; }
+  .collab-msg-edit-input{ min-height:3.5rem; }
 
   .collab-compose{ display:flex; flex-direction:column; gap:0.5rem; padding:0.9rem 1.1rem; border-top:1px solid var(--line-soft); }
   .collab-input{
@@ -961,6 +981,14 @@
     var lastMsgId = 0;
     var pollTimer = null;
 
+    // 관리자 토큰이 있을 때만 쓰이는 수정/삭제 UI 상태 — 이름 변경/삭제 확인/메시지 수정/삭제 확인은
+    // 전부 네이티브 prompt()/confirm() 대신 화면 안 인라인 상태로 처리(모바일 인앱 브라우저 문제 때문 — ① 참고).
+    var editingProject = null;      // 지금 이름을 수정 중인 프로젝트 id
+    var pendingDeleteProject = null; // 삭제 확인 대기 중인 프로젝트 id
+    var editingMsg = null;          // 지금 내용을 수정 중인 메시지 id
+    var pendingDeleteMsg = null;    // 삭제 확인 대기 중인 메시지 id
+    var messagesCache = {};         // id -> message — 인라인 수정/삭제 확인 시 재조회 없이 그 메시지만 다시 그리기 위한 캐시
+
     function hashColor(str){
       var h = 0;
       for(var i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) % 997; }
@@ -985,35 +1013,247 @@
         roomsEl.innerHTML = '<p class="collab-empty">아직 등록된 프로젝트가 없습니다. 위 "+ 새 프로젝트"로 하나 만들어보세요.</p>';
         return;
       }
+      var isAdmin = !!getToken();
       roomsEl.innerHTML = projectsCache.map(function(p){
         var color = PHASE_COLORS[p.phase] || 'var(--flow)';
         var preview = p.last_message ? esc(p.last_message).slice(0,60) : '아직 메시지 없음';
-        return '<button class="collab-room-btn' + (p.id===activeProject ? ' is-active' : '') + '" data-id="' + esc(p.id) + '">' +
-          '<span class="collab-room-name">' + esc(p.name) + '</span>' +
-          '<span class="collab-room-meta"><span class="collab-phase-dot" style="--phase-color:' + color + '"></span>' + esc((p.phase||'flow').toUpperCase()) + ' · ' + esc(p.status||'active') + '</span>' +
-          '<span class="collab-room-preview">' + preview + '</span>' +
-          '</button>';
+
+        if(editingProject === p.id){
+          return '<div class="collab-room-item is-editing">' +
+            '<input type="text" class="collab-input collab-input-sm collab-room-rename-input" data-id="' + esc(p.id) + '" value="' + esc(p.name) + '">' +
+            '<div class="collab-room-admin">' +
+              '<button class="collab-mini-btn" data-action="rename-save" data-id="' + esc(p.id) + '">✓ 저장</button>' +
+              '<button class="collab-mini-btn" data-action="rename-cancel" data-id="' + esc(p.id) + '">취소</button>' +
+            '</div>' +
+          '</div>';
+        }
+
+        var adminRow = '';
+        if(isAdmin){
+          if(pendingDeleteProject === p.id){
+            adminRow = '<div class="collab-room-admin">' +
+              '<button class="collab-mini-btn is-danger" data-action="delete-confirm" data-id="' + esc(p.id) + '">정말 삭제?</button>' +
+              '<button class="collab-mini-btn" data-action="delete-cancel" data-id="' + esc(p.id) + '">취소</button>' +
+            '</div>';
+          } else {
+            adminRow = '<div class="collab-room-admin">' +
+              '<button class="collab-mini-btn" data-action="rename-start" data-id="' + esc(p.id) + '" title="이름 변경">✎ 이름</button>' +
+              '<button class="collab-mini-btn is-danger" data-action="delete-start" data-id="' + esc(p.id) + '" title="프로젝트 삭제">✕ 삭제</button>' +
+            '</div>';
+          }
+        }
+
+        return '<div class="collab-room-item">' +
+          '<button class="collab-room-btn' + (p.id===activeProject ? ' is-active' : '') + '" data-id="' + esc(p.id) + '">' +
+            '<span class="collab-room-name">' + esc(p.name) + '</span>' +
+            '<span class="collab-room-meta"><span class="collab-phase-dot" style="--phase-color:' + color + '"></span>' + esc((p.phase||'flow').toUpperCase()) + ' · ' + esc(p.status||'active') + '</span>' +
+            '<span class="collab-room-preview">' + preview + '</span>' +
+          '</button>' +
+          adminRow +
+        '</div>';
       }).join('');
+    }
+
+    function focusRenameInput(id){
+      var input = roomsEl.querySelector('.collab-room-rename-input[data-id="' + id + '"]');
+      if(input){ input.focus(); input.select(); }
+    }
+
+    function submitRename(id){
+      var input = roomsEl.querySelector('.collab-room-rename-input[data-id="' + id + '"]');
+      var name = input ? input.value.trim() : '';
+      if(!name){ showStatus('프로젝트 이름을 입력하세요.'); return; }
+      var token = getToken();
+      if(!token){ showStatus('먼저 관리자 토큰을 입력하세요.'); return; }
+      fetch(API + '/projects/' + encodeURIComponent(id), {
+        method: 'PATCH',
+        headers: { 'content-type':'application/json', 'authorization':'Bearer ' + token },
+        body: JSON.stringify({ name: name })
+      }).then(function(r){
+        if(r.status === 401){
+          try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          manualOpen = false;
+          refreshAdminControls();
+          showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
+          return;
+        }
+        if(!r.ok){ showStatus('이름 변경에 실패했습니다.'); return; }
+        editingProject = null;
+        showStatus('프로젝트 이름을 변경했습니다.', 'ok');
+        if(activeProject === id) titleEl.textContent = name;
+        loadRooms();
+      }).catch(function(){
+        showStatus('이름 변경 중 오류가 발생했습니다.');
+      });
+    }
+
+    function submitDeleteProject(id){
+      var token = getToken();
+      if(!token){ showStatus('먼저 관리자 토큰을 입력하세요.'); return; }
+      fetch(API + '/projects/' + encodeURIComponent(id), {
+        method: 'DELETE',
+        headers: { 'authorization':'Bearer ' + token }
+      }).then(function(r){
+        pendingDeleteProject = null;
+        if(r.status === 401){
+          try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          manualOpen = false;
+          refreshAdminControls();
+          showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
+          return;
+        }
+        if(!r.ok){ showStatus('프로젝트 삭제에 실패했습니다.'); renderRooms(); return; }
+        showStatus('프로젝트를 삭제했습니다.', 'ok');
+        if(activeProject === id){
+          activeProject = null;
+          lastMsgId = 0;
+          messagesCache = {};
+          if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+          titleEl.textContent = '프로젝트를 선택하세요';
+          turnEl.textContent = '';
+          threadEl.innerHTML = '<p class="collab-empty">왼쪽에서 방을 선택하면 대화가 여기 표시됩니다.</p>';
+        }
+        loadRooms();
+      }).catch(function(){
+        pendingDeleteProject = null;
+        showStatus('삭제 중 오류가 발생했습니다.');
+        renderRooms();
+      });
+    }
+
+    // 메시지 한 건의 DOM을 만든다 — 수정 중/삭제 확인 중 상태와 관리자 여부에 따라 다르게 그림.
+    // 수정(✎)은 sender==='user'(관리자가 보낸 메시지)일 때만 붙임, 삭제(✕)는 보낸 사람 상관없이 항상 붙임.
+    function buildMessageEl(m){
+      var isUser = m.sender === 'user';
+      var color = isUser ? 'var(--accent)' : hashColor(m.sender);
+      var div = document.createElement('div');
+      div.className = 'collab-msg' + (isUser ? ' from-user' : '');
+      div.setAttribute('data-id', m.id);
+      div.setAttribute('data-sender', m.sender);
+
+      var kindBadge = (m.kind && m.kind !== 'message') ? '<span class="collab-msg-kind" style="color:' + color + '">' + esc(m.kind) + '</span>' : '';
+      var head = document.createElement('div');
+      head.className = 'collab-msg-head';
+      head.innerHTML = '<span class="collab-msg-sender" style="color:' + color + '">' + esc(m.sender_label || m.sender) + '</span>' + kindBadge + '<span class="collab-msg-time">' + fmtTime(m.created_at) + '</span>';
+
+      var isAdmin = !!getToken();
+      if(isAdmin){
+        var adminRow = document.createElement('div');
+        adminRow.className = 'collab-msg-admin';
+        if(pendingDeleteMsg === m.id){
+          adminRow.innerHTML =
+            '<button class="collab-mini-btn is-danger" data-msg-action="delete-confirm" data-id="' + m.id + '">정말 삭제?</button>' +
+            '<button class="collab-mini-btn" data-msg-action="delete-cancel" data-id="' + m.id + '">취소</button>';
+        } else {
+          var editBtn = isUser ? '<button class="collab-mini-btn" data-msg-action="edit-start" data-id="' + m.id + '" title="수정">✎</button>' : '';
+          adminRow.innerHTML = editBtn +
+            '<button class="collab-mini-btn is-danger" data-msg-action="delete-start" data-id="' + m.id + '" title="삭제">✕</button>';
+        }
+        head.appendChild(adminRow);
+      }
+      div.appendChild(head);
+
+      if(editingMsg === m.id){
+        var editWrap = document.createElement('div');
+        editWrap.className = 'collab-msg-edit';
+        editWrap.innerHTML =
+          '<textarea class="collab-input collab-msg-edit-input">' + esc(m.content) + '</textarea>' +
+          '<div class="collab-msg-admin">' +
+            '<button class="collab-mini-btn" data-msg-action="edit-save" data-id="' + m.id + '">✓ 저장</button>' +
+            '<button class="collab-mini-btn" data-msg-action="edit-cancel" data-id="' + m.id + '">취소</button>' +
+          '</div>';
+        div.appendChild(editWrap);
+      } else {
+        var body = document.createElement('div');
+        body.className = 'collab-msg-body';
+        body.textContent = m.content;
+        div.appendChild(body);
+      }
+
+      return div;
+    }
+
+    function rerenderMessage(id){
+      var m = messagesCache[id];
+      var old = threadEl.querySelector('.collab-msg[data-id="' + id + '"]');
+      if(!m || !old) return;
+      var fresh = buildMessageEl(m);
+      old.parentNode.replaceChild(fresh, old);
+    }
+
+    function focusMsgEditInput(id){
+      var el = threadEl.querySelector('.collab-msg[data-id="' + id + '"] .collab-msg-edit-input');
+      if(el){ el.focus(); el.select(); }
+    }
+
+    function submitEditMessage(id){
+      var wrap = threadEl.querySelector('.collab-msg[data-id="' + id + '"]');
+      var textarea = wrap ? wrap.querySelector('.collab-msg-edit-input') : null;
+      var content = textarea ? textarea.value.trim() : '';
+      if(!content){ showStatus('내용을 입력하세요.'); return; }
+      var token = getToken();
+      if(!token || !activeProject) { showStatus('먼저 관리자 토큰을 입력하세요.'); return; }
+      fetch(API + '/projects/' + encodeURIComponent(activeProject) + '/messages/' + id, {
+        method: 'PATCH',
+        headers: { 'content-type':'application/json', 'authorization':'Bearer ' + token },
+        body: JSON.stringify({ content: content })
+      }).then(function(r){
+        if(r.status === 401){
+          try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          manualOpen = false;
+          refreshAdminControls();
+          showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
+          return;
+        }
+        if(r.status === 403){
+          showStatus('관리자가 보낸 메시지만 수정할 수 있습니다.');
+          editingMsg = null;
+          rerenderMessage(id);
+          return;
+        }
+        if(!r.ok){ showStatus('메시지 수정에 실패했습니다.'); return; }
+        editingMsg = null;
+        if(messagesCache[id]) messagesCache[id].content = content;
+        rerenderMessage(id);
+        showStatus('메시지를 수정했습니다.', 'ok');
+      }).catch(function(){
+        showStatus('수정 중 오류가 발생했습니다.');
+      });
+    }
+
+    function submitDeleteMessage(id){
+      var token = getToken();
+      if(!token || !activeProject) { showStatus('먼저 관리자 토큰을 입력하세요.'); return; }
+      fetch(API + '/projects/' + encodeURIComponent(activeProject) + '/messages/' + id, {
+        method: 'DELETE',
+        headers: { 'authorization':'Bearer ' + token }
+      }).then(function(r){
+        pendingDeleteMsg = null;
+        if(r.status === 401){
+          try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
+          manualOpen = false;
+          refreshAdminControls();
+          showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
+          return;
+        }
+        if(!r.ok){ showStatus('메시지 삭제에 실패했습니다.'); rerenderMessage(id); return; }
+        delete messagesCache[id];
+        var wrap = threadEl.querySelector('.collab-msg[data-id="' + id + '"]');
+        if(wrap) wrap.parentNode.removeChild(wrap);
+        showStatus('메시지를 삭제했습니다.', 'ok');
+      }).catch(function(){
+        pendingDeleteMsg = null;
+        showStatus('삭제 중 오류가 발생했습니다.');
+        rerenderMessage(id);
+      });
     }
 
     function appendMessages(list){
       if(!list.length) return;
       if(threadEl.querySelector('.collab-empty')) threadEl.innerHTML = '';
       list.forEach(function(m){
-        var isUser = m.sender === 'user';
-        var color = isUser ? 'var(--accent)' : hashColor(m.sender);
-        var div = document.createElement('div');
-        div.className = 'collab-msg' + (isUser ? ' from-user' : '');
-        var kindBadge = (m.kind && m.kind !== 'message') ? '<span class="collab-msg-kind" style="color:' + color + '">' + esc(m.kind) + '</span>' : '';
-        var head = document.createElement('div');
-        head.className = 'collab-msg-head';
-        head.innerHTML = '<span class="collab-msg-sender" style="color:' + color + '">' + esc(m.sender_label || m.sender) + '</span>' + kindBadge + '<span class="collab-msg-time">' + fmtTime(m.created_at) + '</span>';
-        var body = document.createElement('div');
-        body.className = 'collab-msg-body';
-        body.textContent = m.content;
-        div.appendChild(head);
-        div.appendChild(body);
-        threadEl.appendChild(div);
+        messagesCache[m.id] = m;
+        threadEl.appendChild(buildMessageEl(m));
         lastMsgId = Math.max(lastMsgId, m.id);
       });
       threadEl.scrollTop = threadEl.scrollHeight;
@@ -1038,6 +1278,9 @@
       var p = projectsCache.find(function(x){ return x.id === id; });
       activeProject = id;
       lastMsgId = 0;
+      editingMsg = null;
+      pendingDeleteMsg = null;
+      messagesCache = {};
       titleEl.textContent = (p && p.name) || id;
       turnEl.textContent = (p && p.current_turn) ? ('지금 차례 · ' + p.current_turn) : '';
       threadEl.innerHTML = '<p class="collab-empty">불러오는 중…</p>';
@@ -1060,9 +1303,49 @@
     }
 
     roomsEl.addEventListener('click', function(e){
+      var action = e.target.closest('[data-action]');
+      if(action){
+        var act = action.getAttribute('data-action');
+        var id = action.getAttribute('data-id');
+        if(act === 'rename-start'){ editingProject = id; pendingDeleteProject = null; renderRooms(); focusRenameInput(id); return; }
+        if(act === 'rename-cancel'){ editingProject = null; renderRooms(); return; }
+        if(act === 'rename-save'){ submitRename(id); return; }
+        if(act === 'delete-start'){ pendingDeleteProject = id; editingProject = null; renderRooms(); return; }
+        if(act === 'delete-cancel'){ pendingDeleteProject = null; renderRooms(); return; }
+        if(act === 'delete-confirm'){ submitDeleteProject(id); return; }
+        return;
+      }
       var btn = e.target.closest('.collab-room-btn');
       if(!btn) return;
       selectProject(btn.getAttribute('data-id'));
+    });
+
+    roomsEl.addEventListener('keydown', function(e){
+      if(!e.target.classList.contains('collab-room-rename-input')) return;
+      var id = e.target.getAttribute('data-id');
+      if(e.key === 'Enter'){ e.preventDefault(); submitRename(id); }
+      if(e.key === 'Escape'){ editingProject = null; renderRooms(); }
+    });
+
+    threadEl.addEventListener('click', function(e){
+      var action = e.target.closest('[data-msg-action]');
+      if(!action) return;
+      var act = action.getAttribute('data-msg-action');
+      var id = Number(action.getAttribute('data-id'));
+      if(act === 'edit-start'){ editingMsg = id; pendingDeleteMsg = null; rerenderMessage(id); focusMsgEditInput(id); return; }
+      if(act === 'edit-cancel'){ editingMsg = null; rerenderMessage(id); return; }
+      if(act === 'edit-save'){ submitEditMessage(id); return; }
+      if(act === 'delete-start'){ pendingDeleteMsg = id; editingMsg = null; rerenderMessage(id); return; }
+      if(act === 'delete-cancel'){ pendingDeleteMsg = null; rerenderMessage(id); return; }
+      if(act === 'delete-confirm'){ submitDeleteMessage(id); return; }
+    });
+
+    threadEl.addEventListener('keydown', function(e){
+      if(!e.target.classList.contains('collab-msg-edit-input')) return;
+      var wrap = e.target.closest('.collab-msg');
+      var id = wrap ? Number(wrap.getAttribute('data-id')) : null;
+      if(e.key === 'Escape'){ editingMsg = null; if(id) rerenderMessage(id); }
+      if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); if(id) submitEditMessage(id); }
     });
 
     var manualOpen = false; // "직접 입력 열기/닫기"로 토큰 입력창을 강제로 펼쳐둔 상태인지
@@ -1078,6 +1361,22 @@
       tokenRow.hidden = has && !manualOpen;
       tokenActions.hidden = !has;
       composeEl.hidden = !has;
+    }
+
+    // 로그인/로그아웃(토큰이 생기거나 사라짐)처럼 "관리자 여부"가 바뀌는 시점에 호출 —
+    // 방 목록의 이름변경/삭제 버튼과 메시지의 수정/삭제 버튼이 즉시 나타나거나 사라지도록
+    // 방 목록을 다시 그리고, 현재 보고 있는 스레드가 있으면 처음부터 다시 불러와 버튼 상태를 맞춤.
+    function refreshAdminControls(){
+      refreshTokenUI();
+      renderRooms();
+      if(activeProject){
+        editingMsg = null;
+        pendingDeleteMsg = null;
+        lastMsgId = 0;
+        messagesCache = {};
+        threadEl.innerHTML = '<p class="collab-empty">불러오는 중…</p>';
+        loadMessages();
+      }
     }
 
     tokenBtn.addEventListener('click', function(){
@@ -1104,7 +1403,7 @@
           tokenInput.value = '';
           manualOpen = false;
           showStatus('토큰이 확인되었습니다.', 'ok');
-          refreshTokenUI();
+          refreshAdminControls();
         })
         .catch(function(){
           tokenBtn.disabled = false;
@@ -1136,7 +1435,7 @@
       var had = !!getToken();
       try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
       manualOpen = false;
-      refreshTokenUI();
+      refreshAdminControls();
       showStatus(had ? '저장된 토큰을 지웠습니다.' : '지울 토큰이 없습니다.', had ? 'ok' : undefined);
     });
 
@@ -1172,7 +1471,7 @@
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
           manualOpen = false;
-          refreshTokenUI();
+          refreshAdminControls();
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return null;
         }
@@ -1208,7 +1507,7 @@
         if(r.status === 401){
           try{ localStorage.removeItem(TOKEN_KEY); }catch(e){}
           manualOpen = false;
-          refreshTokenUI();
+          refreshAdminControls();
           contentInput.value = content; // 입력한 내용은 유지
           showStatus('토큰이 올바르지 않습니다 — 다시 입력해주세요.');
           return;
