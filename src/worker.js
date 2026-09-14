@@ -11,7 +11,7 @@
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const CORS_HEADERS = {
   "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET,POST,PATCH,OPTIONS",
+  "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
   "access-control-allow-headers": "authorization,content-type",
 };
 
@@ -146,6 +146,16 @@ async function handleApi(request, env, url) {
     return json({ ok: true });
   }
 
+  // DELETE /api/collab/projects/:id — 프로젝트와 그 안의 메시지를 전부 삭제.
+  // 관리자 토큰 권한: 프로젝트는 누가 만들었든 전부 삭제 가능(AI가 자동 생성한 방 포함).
+  if (seg.length === 1 && request.method === "DELETE") {
+    if (!(await isAuthed(request, env))) return json({ error: "unauthorized" }, { status: 401 });
+    await env.COLLAB_DB.prepare(`DELETE FROM messages WHERE project_id=?1`).bind(projectId).run();
+    const res = await env.COLLAB_DB.prepare(`DELETE FROM projects WHERE id=?1`).bind(projectId).run();
+    if (!res.meta || !res.meta.rows_written) return json({ error: "not found" }, { status: 404 });
+    return json({ ok: true });
+  }
+
   // GET /api/collab/projects/:id/messages?after=0&limit=200
   if (seg.length === 2 && seg[1] === "messages" && request.method === "GET") {
     const after = Number(url.searchParams.get("after") || 0) || 0;
@@ -180,6 +190,41 @@ async function handleApi(request, env, url) {
     ).bind(projectId, sender, body.sender_label || null, kind, content, now).run();
 
     return json({ id: ins.meta.last_row_id, created_at: now }, { status: 201 });
+  }
+
+  // PATCH /api/collab/projects/:id/messages/:msgId  { content }
+  // 관리자 토큰 권한: "관리자(user)가 보낸 메시지"만 내용 수정 가능 — AI 에이전트가 보낸 메시지는 수정 불가(기록 보존 목적).
+  if (seg.length === 3 && seg[1] === "messages" && request.method === "PATCH") {
+    if (!(await isAuthed(request, env))) return json({ error: "unauthorized" }, { status: 401 });
+    const msgId = Number(seg[2]);
+    if (!msgId) return json({ error: "invalid message id" }, { status: 400 });
+    const existing = await env.COLLAB_DB.prepare(
+      `SELECT sender FROM messages WHERE id=?1 AND project_id=?2`
+    ).bind(msgId, projectId).first();
+    if (!existing) return json({ error: "not found" }, { status: 404 });
+    if (existing.sender !== "user") {
+      return json({ error: "admin이 보낸 메시지만 수정할 수 있습니다" }, { status: 403 });
+    }
+    const body = await readJson(request);
+    const content = String(body.content || "").trim();
+    if (!content) return json({ error: "content required" }, { status: 400 });
+    await env.COLLAB_DB.prepare(
+      `UPDATE messages SET content=?1 WHERE id=?2`
+    ).bind(content, msgId).run();
+    return json({ ok: true, content });
+  }
+
+  // DELETE /api/collab/projects/:id/messages/:msgId
+  // 관리자 토큰 권한: 보낸 사람 상관없이(AI가 작성한 메시지 포함) 전부 삭제 가능.
+  if (seg.length === 3 && seg[1] === "messages" && request.method === "DELETE") {
+    if (!(await isAuthed(request, env))) return json({ error: "unauthorized" }, { status: 401 });
+    const msgId = Number(seg[2]);
+    if (!msgId) return json({ error: "invalid message id" }, { status: 400 });
+    const res = await env.COLLAB_DB.prepare(
+      `DELETE FROM messages WHERE id=?1 AND project_id=?2`
+    ).bind(msgId, projectId).run();
+    if (!res.meta || !res.meta.rows_written) return json({ error: "not found" }, { status: 404 });
+    return json({ ok: true });
   }
 
   return json({ error: "not found" }, { status: 404 });
