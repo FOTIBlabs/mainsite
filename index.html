@@ -975,6 +975,7 @@
     var tokenRow = document.getElementById('collabTokenRow');
     var tokenInput = document.getElementById('collabTokenInput');
     var tokenBtn = document.getElementById('collabTokenBtn');
+    var adminBtn = document.getElementById('collabAdminBtn');
     var newProjectWrap = document.getElementById('collabNewProject');
     var newToggle = document.getElementById('collabNewToggle');
     var newForm = document.getElementById('collabNewForm');
@@ -1385,6 +1386,7 @@
       tokenBtn.textContent = has ? '로그아웃' : '확인';
       composeEl.hidden = !has;
       newProjectWrap.hidden = !has;
+      if(adminBtn) adminBtn.hidden = !has;
       if(!has){ newForm.hidden = true; }
     }
 
@@ -1447,7 +1449,13 @@
     tokenInput.addEventListener('keydown', function(e){
       if(e.key === 'Enter'){ e.preventDefault(); tokenBtn.click(); }
     });
-
+    
+    if(adminBtn){
+      adminBtn.addEventListener('click', function(){
+        location.href = '/admin.html' + (activeProject ? ('?project=' + encodeURIComponent(activeProject)) : '');
+      });
+    }
+    
     refreshTokenUI();
 
     newToggle.addEventListener('click', function(){
