@@ -19,7 +19,7 @@ const {
   COLLAB_API_BASE = 'https://fotiblabs.com',
   COLLAB_TOKEN,
   OPENAI_API_KEY,
-  OPENAI_MODEL = 'gpt-4o-mini',
+  OPENAI_MODEL = 'gpt-5.6-luna',
   MAX_RETRIES = '3',
   GPT_SENDER = 'gpt',
   GPT_SENDER_LABEL = 'GPT 감독관',
