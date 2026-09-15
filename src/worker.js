@@ -6,7 +6,8 @@
 //
 // 인증: 쓰기(POST/PATCH) 요청은 `Authorization: Bearer <COLLAB_TOKEN>` 헤더가 필요합니다.
 // COLLAB_TOKEN은 코드에 없고 Cloudflare 대시보드의 Worker Bindings(Secrets Store 또는 plain Secret)로만 존재합니다.
-// 읽기(GET)는 공개 — 사이트 방문자도 진행 상황을 볼 수 있게 (필요하면 나중에 잠글 수 있음).
+// 읽기(GET)는 공개 — 단, id가 "-admin"으로 끝나는 프로젝트(관리자 전용 상세 스레드)는
+// 2026-09-15부터 목록/조회 모두 토큰이 있어야 볼 수 있도록 잠갔습니다. (아래 isAdminProjectId 참고)
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const CORS_HEADERS = {
@@ -18,6 +19,13 @@ const CORS_HEADERS = {
 const PHASES = new Set(["flow", "observe", "tune", "iterate", "balance"]);
 const STATUSES = new Set(["active", "paused", "done"]);
 const KINDS = new Set(["message", "command", "decision", "blocker", "done"]);
+
+// "<원래 프로젝트 id>-admin" 형태의 id는 그 프로젝트의 "관리자 전용 상세 스레드"로 취급합니다.
+// 공개 프로젝트 목록에 절대 뜨지 않고, 메시지 조회도 토큰 없이는 안 됩니다.
+// (쓰기는 원래부터 전부 토큰이 필요했으므로 별도 처리 불필요)
+function isAdminProjectId(id) {
+  return /-admin$/.test(String(id || ""));
+}
 
 function json(data, init) {
   init = init || {};
@@ -92,14 +100,14 @@ async function handleApi(request, env, url) {
   }
   const seg = parts.slice(3); // 'projects' 다음 부분: [] | [id] | [id,'messages']
 
-  // GET /api/collab/projects
+  // GET /api/collab/projects — 관리자 전용 스레드(-admin)는 여기서 아예 빼고 보여줌
   if (seg.length === 0 && request.method === "GET") {
     const { results } = await env.COLLAB_DB.prepare(
       `SELECT p.*,
               (SELECT COUNT(*) FROM messages m WHERE m.project_id = p.id) AS message_count,
               (SELECT content FROM messages m WHERE m.project_id = p.id ORDER BY m.id DESC LIMIT 1) AS last_message,
               (SELECT sender_label FROM messages m WHERE m.project_id = p.id ORDER BY m.id DESC LIMIT 1) AS last_sender
-       FROM projects p ORDER BY p.updated_at DESC`
+       FROM projects p WHERE p.id NOT LIKE '%-admin' ORDER BY p.updated_at DESC`
     ).all();
     return json({ projects: results });
   }
@@ -157,7 +165,11 @@ async function handleApi(request, env, url) {
   }
 
   // GET /api/collab/projects/:id/messages?after=0&limit=200
+  // -admin 스레드는 토큰 없으면 401 — 공개 사이트 방문자가 상세 내용을 못 보게 막는 지점.
   if (seg.length === 2 && seg[1] === "messages" && request.method === "GET") {
+    if (isAdminProjectId(projectId) && !(await isAuthed(request, env))) {
+      return json({ error: "unauthorized" }, { status: 401 });
+    }
     const after = Number(url.searchParams.get("after") || 0) || 0;
     const limit = Math.min(Number(url.searchParams.get("limit") || 200) || 200, 500);
     const { results } = await env.COLLAB_DB.prepare(
